@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { S } from "./styles";
 
 export function AdminNav({ tab, setTab, onLogout }) {
@@ -44,24 +45,29 @@ export function StatCard({ label, value, color }) {
 export function LoginScreen({ onLogin, adminPassword }) {
   const [pw, setPw] = useState("");
   const [error, setError] = useState(false);
+
   const submit = () => {
     if (pw === adminPassword) onLogin();
     else { setError(true); setTimeout(() => setError(false), 2000); }
   };
+
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f0", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ background: "#fff", padding: 48, width: 360, border: "1px solid #e8e8e8" }}>
         <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: 3, marginBottom: 4 }}>CIC</div>
         <div style={{ fontSize: 9, letterSpacing: 4, color: "#888", marginBottom: 32 }}>ADMIN PANEL</div>
         <label style={S.label}>PASSWORD</label>
-        <input type="password" value={pw} onChange={e => setPw(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()}
-          style={{ ...S.input, marginBottom: 16, borderColor: error ? "#e53e3e" : "#ddd" }} placeholder="Enter admin password" />
+        <input
+          type="password"
+          value={pw}
+          onChange={e => setPw(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && submit()}
+          style={{ ...S.input, marginBottom: 16, borderColor: error ? "#e53e3e" : "#ddd" }}
+          placeholder="Enter admin password"
+        />
         {error && <div style={{ fontSize: 12, color: "#e53e3e", marginBottom: 12 }}>Incorrect password</div>}
         <button onClick={submit} style={{ ...S.btnPrimary, width: "100%" }}>LOGIN</button>
       </div>
     </div>
   );
 }
-
-// ── need useState for LoginScreen ──────────
-import { useState } from "react";
