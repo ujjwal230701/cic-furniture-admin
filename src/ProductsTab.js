@@ -31,17 +31,20 @@ export default function ProductsTab() {
   useEffect(() => { fetchProducts(); }, []);
 
   const save = async (form) => {
-    if (editProduct) {
-      await supabase.from("products").update(form).eq("id", editProduct.id);
-      showToast("Product updated!");
-    } else {
-      await supabase.from("products").insert([form]);
-      showToast("Product added!");
-    }
-    setShowForm(false);
-    setEditProduct(null);
-    fetchProducts();
-  };
+  if (editProduct) {
+    const { error } = await supabase.from("products").update(form).eq("id", editProduct.id);
+    if (error) { showToast(`Error: ${error.message}`, "error"); return; }
+    showToast("Product updated!");
+  } else {
+    const { error } = await supabase.from("products").insert([form]);
+    if (error) { showToast(`Error: ${error.message}`, "error"); return; }
+    showToast("Product added!");
+  }
+  setShowForm(false);
+  setEditProduct(null);
+  fetchProducts();
+};
+
 
   const remove = async (id) => {
     if (!window.confirm("Delete this product?")) return;
