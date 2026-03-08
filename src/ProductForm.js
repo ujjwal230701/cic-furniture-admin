@@ -13,17 +13,34 @@ export default function ProductForm({ initial, onSave, onCancel }) {
   const fileRef = useRef();
 
   const uploadImage = async (file) => {
-    setUploading(true);
+  setUploading(true);
+  try {
     const ext = file.name.split(".").pop();
     const path = `${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(path, file);
-    if (!error) {
-      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-      setForm(f => ({ ...f, image_url: data.publicUrl }));
-      setPreview(data.publicUrl);
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("product-images")
+      .upload(path, file, { cacheControl: "3600", upsert: true });
+    
+    if (uploadError) {
+      alert(`Upload error: ${uploadError.message}`);
+      setUploading(false);
+      return;
     }
-    setUploading(false);
-  };
+
+    const { data } = supabase.storage
+      .from("product-images")
+      .getPublicUrl(path);
+
+    setForm(f => ({ ...f, image_url: data.publicUrl }));
+    setPreview(data.publicUrl);
+    alert(`Success! URL: ${data.publicUrl}`);
+  } catch (err) {
+    alert(`Caught error: ${err.message}`);
+  }
+  setUploading(false);
+};
+
 
   const save = () => {
     if (!form.name || !form.price) return;
