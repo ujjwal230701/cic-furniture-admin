@@ -44,20 +44,25 @@ const save = async (form, images) => {
     showToast("Product added!");
   }
 
-  // Save additional images to products_images table
+  // Delete old extra images first
+  await supabase.from("products_images").delete().eq("product_id", productId);
+
+  // Save all extra images (skip first one — already in products.image_url)
   if (images && images.length > 1) {
     const imageRows = images.slice(1).map((img, i) => ({
       product_id: productId,
       image_url: img.url,
       sort_order: i + 1
     }));
-    await supabase.from("products_images").insert(imageRows);
+    const { error } = await supabase.from("products_images").insert(imageRows);
+    if (error) showToast(`Image save error: ${error.message}`, "error");
   }
 
   setShowForm(false);
   setEditProduct(null);
   fetchProducts();
 };
+
 
 
 
