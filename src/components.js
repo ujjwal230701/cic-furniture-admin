@@ -3,9 +3,11 @@ import { S } from "./styles";
 
 export function AdminNav({ tab, setTab, onLogout }) {
   const tabs = [
-    { key: "dashboard", label: "Dashboard" },
-    { key: "products", label: "Products" },
-  ];
+  { key: "dashboard", label: "Dashboard" },
+  { key: "products", label: "Products" },
+  { key: "invoices", label: "Invoices" },
+];
+
   return (
     <nav style={{ background: "#1a1a1a", color: "#fff", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60, position: "sticky", top: 0, zIndex: 50 }}>
       <div>
