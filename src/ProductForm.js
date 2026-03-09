@@ -8,43 +8,38 @@ export default function ProductForm({ initial, onSave, onCancel }) {
     name: "", category: CATEGORIES[0], price: "", description: "",
     sku: "", stock: 0, sold: 0, in_stock: true, featured: false, image_url: ""
   });
+  const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState(initial?.image_url || "");
   const fileRef = useRef();
 
   const uploadImage = async (file) => {
-  setUploading(true);
-  try {
-    const ext = file.name.split(".").pop();
-    const path = `${Date.now()}.${ext}`;
-    
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("product-images")
-      .upload(path, file, { cacheControl: "3600", upsert: true });
-    
-    if (uploadError) {
-      alert(`Upload error: ${uploadError.message}`);
-      setUploading(false);
-      return;
+    if (images.length >= 5) { alert("Maximum 5 images per product"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+      if (error) { alert(`Upload error: ${error.message}`); setUploading(false); return; }
+      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      const newImage = { url: data.publicUrl, sort_order: images.length };
+      setImages(prev => [...prev, newImage]);
+      if (images.length === 0) setForm(f => ({ ...f, image_url: data.publicUrl }));
+    } catch (err) {
+      alert(`Error: ${err.message}`);
     }
+    setUploading(false);
+  };
 
-    const { data } = supabase.storage
-      .from("product-images")
-      .getPublicUrl(path);
+  const removeImage = (index) => {
+    const updated = images.filter((_, i) => i !== index);
+    setImages(updated);
+    setForm(f => ({ ...f, image_url: updated.length > 0 ? updated[0].url : "" }));
+  };
 
-    setForm(f => ({ ...f, image_url: data.publicUrl }));
-    setPreview(data.publicUrl);
-    alert(`Success! URL: ${data.publicUrl}`);
-  } catch (err) {
-    alert(`Caught error: ${err.message}`);
-  }
-  setUploading(false);
-};
-
-
-  const save = () => {
+  const save = async () => {
     if (!form.name || !form.price) return;
-    onSave({ ...form, price: +form.price, stock: +form.stock, sold: +form.sold });
+    const savedForm = { ...form, price: +form.price, stock: +form.stock, sold: +form.sold };
+    onSave(savedForm, images);
   };
 
   return (
@@ -56,12 +51,26 @@ export default function ProductForm({ initial, onSave, onCancel }) {
 
         {/* Image Upload */}
         <div style={{ marginBottom: 20 }}>
-          <label style={S.label}>PRODUCT IMAGE</label>
-          <div style={{ border: "1px dashed #ddd", padding: 20, textAlign: "center", cursor: "pointer" }} onClick={() => fileRef.current.click()}>
-            {preview
-              ? <img src={preview} alt="preview" style={{ maxHeight: 160, maxWidth: "100%", objectFit: "contain" }} />
-              : <div style={{ color: "#aaa", fontSize: 13 }}>{uploading ? "Uploading..." : "Tap to upload image"}</div>}
-          </div>
+          <label style={S.label}>PRODUCT IMAGES ({images.length}/5)</label>
+
+          {/* Image Previews */}
+          {images.length > 0 && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+              {images.map((img, i) => (
+                <div key={i} style={{ position: "relative", width: 80, height: 80 }}>
+                  <img src={img.url} alt={`img-${i}`} style={{ width: "100%", height: "100%", objectFit: "cover", border: i === 0 ? "2px solid #1a1a1a" : "1px solid #ddd" }} />
+                  {i === 0 && <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "#1a1a1a", color: "#fff", fontSize: 9, textAlign: "center", padding: 2 }}>MAIN</div>}
+                  <button onClick={() => removeImage(i)} style={{ position: "absolute", top: -6, right: -6, background: "#e53e3e", color: "#fff", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {images.length < 5 && (
+            <div style={{ border: "1px dashed #ddd", padding: 20, textAlign: "center", cursor: "pointer" }} onClick={() => !uploading && fileRef.current.click()}>
+              <div style={{ color: "#aaa", fontSize: 13 }}>{uploading ? "Uploading..." : "Tap to add image"}</div>
+            </div>
+          )}
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => e.target.files[0] && uploadImage(e.target.files[0])} />
         </div>
 
