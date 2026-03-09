@@ -30,20 +30,35 @@ export default function ProductsTab() {
 
   useEffect(() => { fetchProducts(); }, []);
 
-  const save = async (form) => {
+const save = async (form, images) => {
+  let productId;
   if (editProduct) {
     const { error } = await supabase.from("products").update(form).eq("id", editProduct.id);
     if (error) { showToast(`Error: ${error.message}`, "error"); return; }
+    productId = editProduct.id;
     showToast("Product updated!");
   } else {
-    const { error } = await supabase.from("products").insert([form]);
+    const { data, error } = await supabase.from("products").insert([form]).select();
     if (error) { showToast(`Error: ${error.message}`, "error"); return; }
+    productId = data[0].id;
     showToast("Product added!");
   }
+
+  // Save additional images to products_images table
+  if (images && images.length > 1) {
+    const imageRows = images.slice(1).map((img, i) => ({
+      product_id: productId,
+      image_url: img.url,
+      sort_order: i + 1
+    }));
+    await supabase.from("products_images").insert(imageRows);
+  }
+
   setShowForm(false);
   setEditProduct(null);
   fetchProducts();
 };
+
 
 
   const remove = async (id) => {
