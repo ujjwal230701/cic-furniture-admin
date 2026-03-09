@@ -18,6 +18,7 @@ export default function InvoicePreview({ invoice, items }) {
             {SELLER.city} {SELLER.pincode}<br />
             {SELLER.country}<br />
             GSTIN {SELLER.gstin}<br />
+            {SELLER.phone}<br />
             {SELLER.email}
           </div>
         </div>
