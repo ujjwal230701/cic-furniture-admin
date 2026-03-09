@@ -3,6 +3,7 @@ import { ADMIN_PASSWORD } from "./config";
 import { AdminNav, LoginScreen } from "./components";
 import DashboardTab from "./DashboardTab";
 import ProductsTab from "./ProductsTab";
+import InvoiceTab from "./invoice/InvoiceTab";
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -10,7 +11,7 @@ export default function App() {
 
   if (!loggedIn) return <LoginScreen onLogin={() => setLoggedIn(true)} adminPassword={ADMIN_PASSWORD} />;
 
-  const pages = { dashboard: DashboardTab, products: ProductsTab };
+  const pages = { dashboard: DashboardTab, products: ProductsTab, invoices: InvoiceTab };
   const Page = pages[tab];
 
   return (
