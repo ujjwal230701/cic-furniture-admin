@@ -42,25 +42,21 @@ export function AdminNav({ tab, setTab, onLogout }) {
         </div>
       </nav>
 
-      {/* Mobile drawer */}
-      {menuOpen && (
-        <div className="admin-mobile-nav" style={{ position: "fixed", top: 60, left: 0, right: 0, bottom: 0, background: "#1a1a1a", zIndex: 99, padding: 32, display: "flex", flexDirection: "column", gap: 4 }}>
-          {tabs.map(t => (
-  <button key={t.key} onClick={() => goTo(t.key)}
-    style={{ width: "100%", background: tab === t.key ? "rgba(255,255,255,0.1)" : "transparent", border: "none", borderLeft: tab === t.key ? "3px solid #fff" : "3px solid transparent", color: tab === t.key ? "#fff" : "#aaa", cursor: "pointer", fontSize: 16, fontWeight: tab === t.key ? 700 : 400, padding: "16px 20px", textAlign: "left", letterSpacing: 1, display: "block" }}>
-    {t.label}
-  </button>
-))}
-<button onClick={onLogout} style={{ width: "100%", marginTop: 24, background: "none", border: "1px solid #333", color: "#aaa", padding: "14px 16px", fontSize: 12, cursor: "pointer", textAlign: "left", display: "block" }}>
-  LOGOUT
-</button>
+ {/* Mobile drawer */}
+{menuOpen && (
+  <div className="admin-mobile-nav" style={{ position: "fixed", top: 60, left: 0, right: 0, bottom: 0, background: "#1a1a1a", zIndex: 99, padding: 24, display: "flex", flexDirection: "column", gap: 4 }}>
+    {tabs.map(t => (
+      <button key={t.key} onClick={() => goTo(t.key)}
+        style={{ width: "100%", background: tab === t.key ? "rgba(255,255,255,0.1)" : "transparent", border: "none", borderLeft: tab === t.key ? "3px solid #fff" : "3px solid transparent", color: tab === t.key ? "#fff" : "#aaa", cursor: "pointer", fontSize: 16, fontWeight: tab === t.key ? 700 : 400, padding: "16px 20px", textAlign: "left", letterSpacing: 1, display: "block" }}>
+        {t.label}
+      </button>
+    ))}
+    <button onClick={onLogout} style={{ width: "100%", marginTop: 24, background: "none", border: "1px solid #333", color: "#aaa", padding: "14px 16px", fontSize: 12, cursor: "pointer", textAlign: "left", display: "block" }}>
+      LOGOUT
+    </button>
+  </div>
+)}
 
-          ))}
-          <button onClick={onLogout} style={{ marginTop: 24, background: "none", border: "1px solid #333", color: "#aaa", padding: "12px 16px", fontSize: 12, cursor: "pointer", textAlign: "left" }}>
-            LOGOUT
-          </button>
-        </div>
-      )}
 
       <style>{`
         .admin-desktop-nav { display: flex !important; }
