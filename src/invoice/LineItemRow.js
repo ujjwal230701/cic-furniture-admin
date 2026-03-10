@@ -48,7 +48,7 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
       <td style={{ padding: "8px 6px", fontSize: 12 }}>{index + 1}</td>
 
       {/* Item name with custom dropdown */}
-      <td style={{ padding: "8px 6px", minWidth: 180, position: "relative" }}>
+      <td style={{ padding: "8px 6px", minWidth: 180, position: "relative", overflow: "visible" }}>
         <input
           value={item.product_name}
           onChange={e => { onChange(index, "product_name", e.target.value); setShowDropdown(true); }}
@@ -60,7 +60,7 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
 
         {/* Dropdown list */}
 {showDropdown && filteredProducts.length > 0 && (
-  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #ddd", zIndex: 100, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #ddd", zIndex: 1000, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
     {filteredProducts.map(p => (
       <div
         key={p.id}
