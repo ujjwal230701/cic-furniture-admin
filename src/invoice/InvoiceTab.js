@@ -59,6 +59,8 @@ if (itemsError) showToast(`Items error: ${itemsError.message}`, "error");
     setView("list");
     fetchInvoices();
   };
+  alert(`invoiceId: ${invoiceId}, items count: ${items.length}, error: ${itemsError?.message}`);
+
 
   const viewInvoice = async (inv) => { setSelected(inv); setSelectedItems(await fetchItems(inv.id)); setView("preview"); };
   const editInvoice = async (inv) => { setEditData({ ...inv, items: await fetchItems(inv.id) }); setView("form"); };
