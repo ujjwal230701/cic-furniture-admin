@@ -18,14 +18,15 @@ export const IS = {
   td: { padding: "10px 12px", borderBottom: "1px solid #e8e8e8", fontSize: 13, verticalAlign: "top" },
   tdRight: { padding: "10px 12px", borderBottom: "1px solid #e8e8e8", fontSize: 13, textAlign: "right", verticalAlign: "top" },
   totalsRow: { display: "flex", justifyContent: "flex-end", padding: "6px 0" },
-  totalsLabel: { width: 200, color: "#555", fontSize: 13 },
-  totalsValue: { width: 120, textAlign: "right", fontSize: 13 },
-  grandTotal: { background: "#1a1a1a", color: "#fff", padding: "10px 16px", display: "flex", justifyContent: "space-between", marginTop: 8 },
-  totalInWords: { fontStyle: "italic", fontSize: 13, color: "#333", marginTop: 8, textAlign: "right" },
-  sectionTitle: { fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#888", marginBottom: 8, marginTop: 24 },
-  bankDetail: { fontSize: 12, color: "#444", lineHeight: 1.8 },
-  terms: { fontSize: 12, color: "#444", lineHeight: 1.8 },
-  divider: { borderTop: "1px solid #e8e8e8", margin: "20px 0" },
+  printCSS: `
+  @media print {
+    body * { visibility: hidden; }
+    #invoice-preview, #invoice-preview * { visibility: visible; }
+    #invoice-preview { position: fixed; top: 0; left: 0; width: 100%; max-width: 100%; padding: 20px; }
+    .no-print { display: none !important; }
+  }
+`
+ivider: { borderTop: "1px solid #e8e8e8", margin: "20px 0" },
 
   // Print overrides (injected via style tag)
   printCSS: `
