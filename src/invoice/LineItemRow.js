@@ -48,48 +48,45 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
       <td style={{ padding: "8px 6px", fontSize: 12 }}>{index + 1}</td>
 
       {/* Item name with custom dropdown */}
-      <td style={{ padding: "8px 6px", minWidth: 180, position: "relative", overflow: "visible" }}>
-        <input
-          value={item.product_name}
-          onChange={e => { onChange(index, "product_name", e.target.value); setShowDropdown(true); }}
-          onFocus={() => setShowDropdown(true)}
-          onBlur={() => setTimeout(() => setShowDropdown(false), 300)}
-          placeholder="Type to search..."
-          style={{ ...inputStyle, marginBottom: 4 }}
-        />
-
-        {/* Dropdown list */}
-{showDropdown && filteredProducts.length > 0 && (
-  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #ddd", zIndex: 1000, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-    {filteredProducts.map(p => (
-      <div
-        key={p.id}
-        onMouseDown={() => selectProduct(p)}
-        onTouchStart={() => selectProduct(p)}
-        style={{ padding: "10px 12px", cursor: "pointer", fontSize: 13, borderBottom: "1px solid #f0f0f0" }}
-        onMouseEnter={e => e.currentTarget.style.background = "#f5f5f0"}
-        onMouseLeave={e => e.currentTarget.style.background = "#fff"}
-      >
-        <div style={{ fontWeight: 600 }}>{p.name}</div>
-        <div style={{ fontSize: 11, color: "#888" }}>₹{fmt(p.price)}</div>
-      </div>
-    ))}
-  </div>
-)}
-
-
-        <input value={item.description} onChange={e => onChange(index, "description", e.target.value)}
-          placeholder="Description..." style={{ ...inputStyle, fontSize: 11, color: "#666" }} />
-
-        {isManual && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-            <span style={{ fontSize: 10, color: "#d97706" }}>⚠️ Not in catalogue</span>
-            <button onMouseDown={addToCatalogue} style={{ fontSize: 9, padding: "2px 6px", background: "#1a1a1a", color: "#fff", border: "none", cursor: "pointer" }}>
-              + ADD TO CATALOGUE
-            </button>
+<td style={{ padding: "8px 6px", minWidth: 180 }}>
+  
+  <div style={{ position: "relative" }}>
+    <input
+      value={item.product_name}
+      onChange={e => { onChange(index, "product_name", e.target.value); setShowDropdown(true); }}
+      onFocus={() => setShowDropdown(true)}
+      onBlur={() => setTimeout(() => setShowDropdown(false), 300)}
+      placeholder="Type to search..."
+      style={{ ...inputStyle, marginBottom: 4 }}
+    />
+    {showDropdown && filteredProducts.length > 0 && (
+      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #ddd", zIndex: 1000, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+        {filteredProducts.map(p => (
+          <div key={p.id} onMouseDown={() => selectProduct(p)} onTouchStart={() => selectProduct(p)}
+            style={{ padding: "10px 12px", cursor: "pointer", fontSize: 13, borderBottom: "1px solid #f0f0f0" }}
+            onMouseEnter={e => e.currentTarget.style.background = "#f5f5f0"}
+            onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+            <div style={{ fontWeight: 600 }}>{p.name}</div>
+            <div style={{ fontSize: 11, color: "#888" }}>₹{fmt(p.price)}</div>
           </div>
-        )}
-      </td>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <input value={item.description} onChange={e => onChange(index, "description", e.target.value)}
+    placeholder="Description..." style={{ ...inputStyle, fontSize: 11, color: "#666" }} />
+
+  {isManual && (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+      <span style={{ fontSize: 10, color: "#d97706" }}>⚠️ Not in catalogue</span>
+      <button onMouseDown={addToCatalogue} style={{ fontSize: 9, padding: "2px 6px", background: "#1a1a1a", color: "#fff", border: "none", cursor: "pointer" }}>
+        + ADD TO CATALOGUE
+      </button>
+    </div>
+  )}
+</td>
+
 
       {/* HSN */}
       <td style={{ padding: "8px 4px", width: 80 }}>
