@@ -53,7 +53,7 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
           value={item.product_name}
           onChange={e => { onChange(index, "product_name", e.target.value); setShowDropdown(true); }}
           onFocus={() => setShowDropdown(true)}
-          onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+          onBlur={() => setTimeout(() => setShowDropdown(false), 300)}
           placeholder="Type to search..."
           style={{ ...inputStyle, marginBottom: 4 }}
         />
