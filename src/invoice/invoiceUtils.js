@@ -1,18 +1,39 @@
 import { SELLER } from "./invoiceConfig";
 
-// ── GST Type based on place of supply ─────
+// ── GST Type ───────────────────────────────
 export function getGSTType(placeOfSupply) {
   return placeOfSupply === SELLER.state ? "intra" : "inter";
 }
 
-// ── Calculate invoice totals ───────────────
-export function calcTotals(items, gstType) {
-  const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
-  const totalGST = items.reduce((sum, item) => {
-    const itemTotal = item.quantity * item.unit_price;
-    return sum + (itemTotal * item.gst_rate / 100);
-  }, 0);
+// ── Back-calculate base price from inclusive price ─
+export function calcBasePrice(inclusivePrice, gstRate) {
+  return inclusivePrice / (1 + gstRate / 100);
+}
 
+// ── Calculate single line item totals ──────
+export function calcItemTotal(item, gstInclusive) {
+  const cataloguePrice = item.catalogue_price || item.unit_price;
+  const discountAmt = cataloguePrice * (item.discount_pct || 0) / 100;
+  const priceAfterDiscount = cataloguePrice - discountAmt;
+  const basePrice = gstInclusive ? calcBasePrice(priceAfterDiscount, item.gst_rate) : priceAfterDiscount;
+  const gstAmt = basePrice * item.gst_rate / 100;
+  return {
+    basePrice,
+    discountAmt,
+    priceAfterDiscount,
+    gstAmt,
+    lineTotal: (basePrice + gstAmt) * item.quantity,
+  };
+}
+
+// ── Calculate invoice totals ───────────────
+export function calcTotals(items, gstType, gstInclusive) {
+  let subtotal = 0, totalGST = 0;
+  items.forEach(item => {
+    const { basePrice, gstAmt } = calcItemTotal(item, gstInclusive);
+    subtotal += basePrice * item.quantity;
+    totalGST += gstAmt * item.quantity;
+  });
   return {
     subtotal,
     cgst: gstType === "intra" ? totalGST / 2 : 0,
@@ -23,9 +44,9 @@ export function calcTotals(items, gstType) {
 }
 
 // ── Number to words ────────────────────────
-const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
-  "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
-  "Seventeen", "Eighteen", "Nineteen"];
+const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven",
+  "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen",
+  "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
 const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
 
 function numToWords(n) {
@@ -53,7 +74,7 @@ export function fmt(amount) {
 
 // ── Generate invoice number ────────────────
 export function generateInvoiceNumber(lastNumber) {
-  const num = lastNumber ? parseInt(lastNumber.replace("INV-", "")) + 1 : 1;
+  const num = lastNumber ? parseInt(lastNumber.replace("INV-", "")) + 1 : 878;
   return `INV-${num}`;
 }
 
