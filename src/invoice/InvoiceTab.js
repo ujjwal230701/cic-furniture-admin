@@ -38,6 +38,8 @@ export default function InvoiceTab() {
       await deductStock(items);
       showToast("Invoice created!");
     }
+    console.log("Saving items for invoiceId:", invoiceId, "Items:", items);
+
     const { error: itemsError } = await supabase.from("invoice_items").insert(items.map(item => ({
   invoice_id: invoiceId,
   product_id: item.product_id || null,
