@@ -59,19 +59,24 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
         />
 
         {/* Dropdown list */}
-        {showDropdown && filteredProducts.length > 0 && (
-          <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #ddd", zIndex: 100, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-            {filteredProducts.map(p => (
-              <div key={p.id} onMouseDown={() => selectProduct(p)}
-                style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, borderBottom: "1px solid #f0f0f0" }}
-                onMouseEnter={e => e.target.style.background = "#f5f5f0"}
-                onMouseLeave={e => e.target.style.background = "#fff"}>
-                <div style={{ fontWeight: 600 }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: "#888" }}>₹{fmt(p.price)}</div>
-              </div>
-            ))}
-          </div>
-        )}
+{showDropdown && filteredProducts.length > 0 && (
+  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #ddd", zIndex: 100, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+    {filteredProducts.map(p => (
+      <div
+        key={p.id}
+        onMouseDown={() => selectProduct(p)}
+        onTouchStart={() => selectProduct(p)}
+        style={{ padding: "10px 12px", cursor: "pointer", fontSize: 13, borderBottom: "1px solid #f0f0f0" }}
+        onMouseEnter={e => e.currentTarget.style.background = "#f5f5f0"}
+        onMouseLeave={e => e.currentTarget.style.background = "#fff"}
+      >
+        <div style={{ fontWeight: 600 }}>{p.name}</div>
+        <div style={{ fontSize: 11, color: "#888" }}>₹{fmt(p.price)}</div>
+      </div>
+    ))}
+  </div>
+)}
+
 
         <input value={item.description} onChange={e => onChange(index, "description", e.target.value)}
           placeholder="Description..." style={{ ...inputStyle, fontSize: 11, color: "#666" }} />
