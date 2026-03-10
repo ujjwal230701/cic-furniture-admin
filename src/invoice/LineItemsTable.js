@@ -11,7 +11,7 @@ export default function LineItemsTable({ items, products, gstInclusive, gstType,
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, marginBottom: 12 }}>LINE ITEMS</div>
-      <div style={{ overflowX: "auto" }}>
+      <div style={{ overflowX: "auto", overflowY: "visible" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
           <thead>
             <tr>
