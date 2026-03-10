@@ -53,7 +53,7 @@ export default function InvoiceTab() {
       total: item.quantity * item.catalogue_price * (1 - (item.discount_pct || 0) / 100),
     })));
 
-    alert(`invoiceId: ${invoiceId}, items: ${items.length}, error: ${itemsError?.message}`);
+    
 
     setEditData(null);
     setView("list");
