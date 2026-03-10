@@ -1,6 +1,6 @@
 export const IS = {
   // Screen styles
-  page: { background: "#fff", maxWidth: 900, margin: "0 auto", padding: 40, fontFamily: "'Segoe UI', system-ui, sans-serif", fontSize: 13, color: "#1a1a1a" },
+  page: { maxWidth: 794, margin: "0 auto", padding: 40, background: "#fff", fontFamily: "Arial, sans-serif", fontSize: 13, color: "#1a1a1a" },
   header: { display: "flex", justifyContent: "space-between", marginBottom: 32, alignItems: "flex-start" },
   sellerName: { fontSize: 16, fontWeight: 800, marginBottom: 4 },
   sellerDetail: { fontSize: 12, color: "#444", lineHeight: 1.8 },
