@@ -1,9 +1,10 @@
 import { SELLER, BANK, TERMS } from "./invoiceConfig";
-import { fmt, totalInWords, formatDate } from "./invoiceUtils";
+import { fmt, totalInWords, formatDate, calcItemTotal } from "./invoiceUtils";
 import { IS } from "./invoiceStyles";
 
 export default function InvoicePreview({ invoice, items }) {
   const gstType = invoice.gst_type;
+  const gstInclusive = invoice.gst_inclusive || false;
 
   return (
     <div id="invoice-preview" style={IS.page}>
@@ -22,7 +23,7 @@ export default function InvoicePreview({ invoice, items }) {
             {SELLER.email}
           </div>
         </div>
-        <div>
+        <div style={{ textAlign: "right" }}>
           <div style={IS.invoiceTitle}>TAX INVOICE</div>
           <div style={IS.invoiceNumber}># {invoice.invoice_number}</div>
         </div>
@@ -47,9 +48,10 @@ export default function InvoicePreview({ invoice, items }) {
           )}
         </div>
         <div>
-          {[["Invoice Date", formatDate(invoice.created_at || new Date())],
+          {[
+            ["Invoice Date", formatDate(invoice.created_at || new Date())],
             ["Terms", "Due on Receipt"],
-            ["Due Date", formatDate(invoice.due_date)]
+            ["Due Date", formatDate(invoice.due_date)],
           ].map(([label, value]) => (
             <div key={label} style={IS.metaRow}>
               <span style={IS.metaLabel}>{label} :</span>
@@ -60,22 +62,23 @@ export default function InvoicePreview({ invoice, items }) {
       </div>
 
       {/* Items Table */}
-      <table style={IS.table}>
+      <table style={{ ...IS.table, width: "100%", tableLayout: "fixed" }}>
         <thead>
           <tr>
-            <th style={{ ...IS.th, width: 30 }}>#</th>
-            <th style={IS.th}>Item & Description</th>
-            <th style={IS.th}>HSN/SAC</th>
-            <th style={{ ...IS.thRight, width: 60 }}>Qty</th>
-            <th style={{ ...IS.thRight, width: 90 }}>Rate</th>
-            <th style={{ ...IS.thRight, width: 100 }}>{gstType === "intra" ? "CGST/SGST" : "IGST"}</th>
-            <th style={{ ...IS.thRight, width: 90 }}>Amount</th>
+            <th style={{ ...IS.th, width: "5%" }}>#</th>
+            <th style={{ ...IS.th, width: "30%" }}>Item & Description</th>
+            <th style={{ ...IS.th, width: "10%" }}>HSN/SAC</th>
+            <th style={{ ...IS.thRight, width: "7%" }}>Qty</th>
+            <th style={{ ...IS.thRight, width: "12%" }}>Rate</th>
+            <th style={{ ...IS.thRight, width: "8%" }}>Disc%</th>
+            <th style={{ ...IS.thRight, width: "12%" }}>Final Rate</th>
+            <th style={{ ...IS.thRight, width: "10%" }}>{gstType === "intra" ? "CGST/SGST" : "IGST"}</th>
+            <th style={{ ...IS.thRight, width: "11%" }}>Amount</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item, i) => {
-            const itemTotal = item.quantity * item.unit_price;
-            const gstAmt = itemTotal * item.gst_rate / 100;
+            const { basePrice, gstAmt, lineTotal, priceAfterDiscount } = calcItemTotal(item, gstInclusive);
             return (
               <tr key={i}>
                 <td style={IS.td}>{i + 1}</td>
@@ -84,10 +87,14 @@ export default function InvoicePreview({ invoice, items }) {
                   {item.description && <div style={{ fontSize: 11, color: "#666" }}>{item.description}</div>}
                 </td>
                 <td style={IS.td}>{item.hsn_sac}</td>
-                <td style={IS.tdRight}>{item.quantity}.00<br /><span style={{ fontSize: 11, color: "#888" }}>pcs</span></td>
-                <td style={IS.tdRight}>{fmt(item.unit_price)}</td>
-                <td style={IS.tdRight}>{fmt(gstAmt)}<br /><span style={{ fontSize: 11, color: "#888" }}>{item.gst_rate}%</span></td>
-                <td style={IS.tdRight}>{fmt(itemTotal)}</td>
+                <td style={IS.tdRight}>{item.quantity}<br /><span style={{ fontSize: 11, color: "#888" }}>pcs</span></td>
+                <td style={IS.tdRight}>{fmt(item.catalogue_price || item.unit_price)}</td>
+                <td style={IS.tdRight}>
+                  {item.discount_pct > 0 ? <span style={{ color: "#38a169", fontWeight: 700 }}>{item.discount_pct}%</span> : "—"}
+                </td>
+                <td style={IS.tdRight}>{fmt(priceAfterDiscount || basePrice)}</td>
+                <td style={IS.tdRight}>{fmt(gstAmt * item.quantity)}<br /><span style={{ fontSize: 11, color: "#888" }}>{item.gst_rate}%</span></td>
+                <td style={IS.tdRight}>{fmt(lineTotal)}</td>
               </tr>
             );
           })}
@@ -95,13 +102,14 @@ export default function InvoicePreview({ invoice, items }) {
       </table>
 
       {/* Totals */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ fontSize: 12, color: "#555" }}>Items in Total {items.length}.00</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 16 }}>
+        <div style={{ fontSize: 12, color: "#555" }}>Items in Total {items.length}</div>
         <div style={{ minWidth: 260 }}>
-          {[["Sub Total", fmt(invoice.subtotal)],
+          {[
+            ["Sub Total", fmt(invoice.subtotal)],
             gstType === "intra" ? [`CGST (${items[0]?.gst_rate / 2 || 9}%)`, fmt(invoice.cgst)] : null,
             gstType === "intra" ? [`SGST (${items[0]?.gst_rate / 2 || 9}%)`, fmt(invoice.sgst)] : null,
-            gstType === "inter" ? [`IGST${items[0]?.gst_rate ? ` (${items[0].gst_rate}%)` : ""}`, fmt(invoice.igst)] : null,
+            gstType === "inter" ? [`IGST (${items[0]?.gst_rate || 18}%)`, fmt(invoice.igst)] : null,
           ].filter(Boolean).map(([label, value]) => (
             <div key={label} style={IS.totalsRow}>
               <span style={IS.totalsLabel}>{label}</span>
