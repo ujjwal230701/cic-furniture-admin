@@ -38,7 +38,21 @@ export default function InvoiceTab() {
       await deductStock(items);
       showToast("Invoice created!");
     }
-    await supabase.from("invoice_items").insert(items.map(item => ({ ...item, invoice_id: invoiceId, total: item.quantity * item.unit_price })));
+    const { error: itemsError } = await supabase.from("invoice_items").insert(items.map(item => ({
+  invoice_id: invoiceId,
+  product_id: item.product_id || null,
+  product_name: item.product_name,
+  description: item.description || "",
+  hsn_sac: item.hsn_sac || "",
+  quantity: item.quantity,
+  unit_price: item.catalogue_price * (1 - (item.discount_pct || 0) / 100),
+  catalogue_price: item.catalogue_price || 0,
+  discount_pct: item.discount_pct || 0,
+  gst_rate: item.gst_rate,
+  total: item.quantity * item.catalogue_price * (1 - (item.discount_pct || 0) / 100),
+})));
+if (itemsError) showToast(`Items error: ${itemsError.message}`, "error");
+
     setEditData(null);
     setView("list");
     fetchInvoices();
