@@ -2,29 +2,73 @@ import { useState } from "react";
 import { S } from "./styles";
 
 export function AdminNav({ tab, setTab, onLogout }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const tabs = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "products", label: "Products" },
-  { key: "invoices", label: "Invoices" },
-];
+    { key: "dashboard", label: "Dashboard" },
+    { key: "products", label: "Products" },
+    { key: "invoices", label: "Invoices" },
+  ];
+  const goTo = (key) => { setTab(key); setMenuOpen(false); };
 
   return (
-    <nav style={{ background: "#1a1a1a", color: "#fff", padding: "0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60, position: "sticky", top: 0, zIndex: 50 }}>
-      <div>
-        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: 3 }}>CIC</span>
-        <span style={{ fontSize: 9, letterSpacing: 3, color: "#555", marginLeft: 8 }}>ADMIN</span>
-      </div>
-      <div style={{ display: "flex", gap: 4 }}>
-        {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{ background: tab === t.key ? "#fff" : "transparent", color: tab === t.key ? "#1a1a1a" : "#aaa", border: "none", padding: "8px 16px", fontSize: 11, fontWeight: 700, letterSpacing: 1, cursor: "pointer" }}>
-            {t.label.toUpperCase()}
+    <>
+      <nav style={{ background: "#1a1a1a", color: "#fff", padding: "0 24px", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
+          <div>
+            <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: 3 }}>CIC</span>
+            <span style={{ fontSize: 9, letterSpacing: 3, color: "#555", marginLeft: 8 }}>ADMIN</span>
+          </div>
+
+          {/* Desktop tabs */}
+          <div className="admin-desktop-nav" style={{ display: "flex", gap: 4 }}>
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => goTo(t.key)}
+                style={{ background: tab === t.key ? "#fff" : "transparent", color: tab === t.key ? "#1a1a1a" : "#aaa", border: "none", padding: "8px 16px", fontSize: 11, fontWeight: 700, letterSpacing: 1, cursor: "pointer" }}>
+                {t.label.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <button onClick={onLogout} className="admin-desktop-nav"
+              style={{ background: "none", border: "1px solid #333", color: "#aaa", padding: "6px 14px", fontSize: 10, letterSpacing: 1, cursor: "pointer" }}>
+              LOGOUT
+            </button>
+            <button onClick={() => setMenuOpen(!menuOpen)} className="admin-mobile-nav"
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: "#fff", padding: 4 }}>
+              {menuOpen ? "✕" : "☰"}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile drawer */}
+      {menuOpen && (
+        <div className="admin-mobile-nav" style={{ position: "fixed", top: 60, left: 0, right: 0, bottom: 0, background: "#1a1a1a", zIndex: 99, padding: 32, display: "flex", flexDirection: "column", gap: 4 }}>
+          {tabs.map(t => (
+            <button key={t.key} onClick={() => goTo(t.key)}
+              style={{ background: tab === t.key ? "rgba(255,255,255,0.1)" : "transparent", border: "none", borderLeft: tab === t.key ? "3px solid #fff" : "3px solid transparent", color: tab === t.key ? "#fff" : "#aaa", cursor: "pointer", fontSize: 16, fontWeight: tab === t.key ? 700 : 400, padding: "14px 16px", textAlign: "left", letterSpacing: 1 }}>
+              {t.label}
+            </button>
+          ))}
+          <button onClick={onLogout} style={{ marginTop: 24, background: "none", border: "1px solid #333", color: "#aaa", padding: "12px 16px", fontSize: 12, cursor: "pointer", textAlign: "left" }}>
+            LOGOUT
           </button>
-        ))}
-      </div>
-      <button onClick={onLogout} style={{ background: "none", border: "1px solid #333", color: "#aaa", padding: "6px 14px", fontSize: 10, letterSpacing: 1, cursor: "pointer" }}>LOGOUT</button>
-    </nav>
+        </div>
+      )}
+
+      <style>{`
+        .admin-desktop-nav { display: flex !important; }
+        .admin-mobile-nav { display: none !important; }
+        @media (max-width: 768px) {
+          .admin-desktop-nav { display: none !important; }
+          .admin-mobile-nav { display: block !important; }
+        }
+      `}</style>
+    </>
   );
 }
+
 
 export function Toast({ toast }) {
   if (!toast) return null;
