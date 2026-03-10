@@ -2,136 +2,107 @@ import { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { S } from "../styles";
 import { fmt } from "./invoiceUtils";
+import { deductStock, restoreStock, adjustStock } from "./useInvoiceStock";
+import { SELLER } from "./invoiceConfig";
 import InvoiceList from "./InvoiceList";
 import InvoiceForm from "./InvoiceForm";
 import InvoicePreview from "./InvoicePreview";
-import { SELLER } from "./invoiceConfig";
 
 export default function InvoiceTab() {
-  const [view, setView] = useState("list"); // list | form | preview
+  const [view, setView] = useState("list");
   const [invoices, setInvoices] = useState([]);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [selected, setSelected] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
-  const [editInvoice, setEditInvoice] = useState(null);
+  const [editData, setEditData] = useState(null);
   const [toast, setToast] = useState(null);
 
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const fetchInvoices = async () => {
-    const { data } = await supabase.from("invoices").select("*").order("id", { ascending: false });
-    setInvoices(data || []);
-  };
+  const showToast = (msg, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
+  const fetchInvoices = async () => { const { data } = await supabase.from("invoices").select("*").order("id", { ascending: false }); setInvoices(data || []); };
+  const fetchItems = async (id) => { const { data } = await supabase.from("invoice_items").select("*").eq("invoice_id", id); return data || []; };
 
   useEffect(() => { fetchInvoices(); }, []);
 
-  const fetchItems = async (invoiceId) => {
-    const { data } = await supabase.from("invoice_items").select("*").eq("invoice_id", invoiceId);
-    return data || [];
-  };
-
   const save = async (invoiceData, items) => {
     let invoiceId;
-    if (editInvoice) {
-      await supabase.from("invoices").update(invoiceData).eq("id", editInvoice.id);
-      await supabase.from("invoice_items").delete().eq("invoice_id", editInvoice.id);
-      invoiceId = editInvoice.id;
+    if (editData) {
+      const oldItems = await fetchItems(editData.id);
+      await supabase.from("invoices").update(invoiceData).eq("id", editData.id);
+      await supabase.from("invoice_items").delete().eq("invoice_id", editData.id);
+      await adjustStock(oldItems, items);
+      invoiceId = editData.id;
       showToast("Invoice updated!");
     } else {
-      const { data, error } = await supabase.from("invoices").insert([invoiceData]).select();
+      const { data, error } = await supabase.from("invoices").insert([{ ...invoiceData, status: "active" }]).select();
       if (error) { showToast(`Error: ${error.message}`, "error"); return; }
       invoiceId = data[0].id;
+      await deductStock(items);
       showToast("Invoice created!");
     }
-    const itemRows = items.map(item => ({ ...item, invoice_id: invoiceId, total: item.quantity * item.unit_price }));
-    await supabase.from("invoice_items").insert(itemRows);
-    setEditInvoice(null);
+    await supabase.from("invoice_items").insert(items.map(item => ({ ...item, invoice_id: invoiceId, total: item.quantity * item.unit_price })));
+    setEditData(null);
     setView("list");
     fetchInvoices();
   };
 
-  const viewInvoice = async (inv) => {
-    const items = await fetchItems(inv.id);
-    setSelectedInvoice(inv);
-    setSelectedItems(items);
-    setView("preview");
-  };
+  const viewInvoice = async (inv) => { setSelected(inv); setSelectedItems(await fetchItems(inv.id)); setView("preview"); };
+  const editInvoice = async (inv) => { setEditData({ ...inv, items: await fetchItems(inv.id) }); setView("form"); };
 
-  const editInvoiceHandler = async (inv) => {
+  const cancelInvoice = async (inv) => {
+    if (!window.confirm(`Cancel ${inv.invoice_number}? Stock will be restored.`)) return;
     const items = await fetchItems(inv.id);
-    setEditInvoice({ ...inv, items });
-    setView("form");
-  };
-
-  const deleteInvoice = async (id) => {
-    if (!window.confirm("Delete this invoice?")) return;
-    await supabase.from("invoices").delete().eq("id", id);
-    showToast("Invoice deleted");
+    await supabase.from("invoices").update({ status: "cancelled" }).eq("id", inv.id);
+    await restoreStock(items);
+    showToast(`${inv.invoice_number} cancelled — stock restored`);
     fetchInvoices();
   };
 
-  const updatePaymentStatus = async (id, status) => {
+  const updatePayment = async (id, status) => {
     await supabase.from("invoices").update({ payment_status: status }).eq("id", id);
     showToast(`Marked as ${status}`);
     fetchInvoices();
-    if (selectedInvoice?.id === id) setSelectedInvoice(inv => ({ ...inv, payment_status: status }));
+    setSelected(s => s ? { ...s, payment_status: status } : s);
   };
 
-  const printInvoice = () => window.print();
-
-  const whatsappShare = () => {
-    if (!selectedInvoice) return;
-    const msg = `*TAX INVOICE - ${selectedInvoice.invoice_number}*\n\nDear ${selectedInvoice.customer_name},\n\nPlease find your invoice details:\n\nSubtotal: ₹${fmt(selectedInvoice.subtotal)}\nGST: ₹${fmt((selectedInvoice.igst || 0) + (selectedInvoice.cgst || 0) + (selectedInvoice.sgst || 0))}\n*Total: ₹${fmt(selectedInvoice.total)}*\n\nThank you for your business!\n\n${SELLER.name}`;
+  const whatsapp = () => {
+    if (!selected) return;
+    const gst = (selected.igst || 0) + (selected.cgst || 0) + (selected.sgst || 0);
+    const msg = `*TAX INVOICE - ${selected.invoice_number}*\n\nDear ${selected.customer_name},\n\nSubtotal: ₹${fmt(selected.subtotal)}\nGST: ₹${fmt(gst)}\n*Total: ₹${fmt(selected.total)}*\n\nThank you!\n${SELLER.name}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
   };
 
   return (
     <div>
-      {toast && (
-        <div style={{ position: "fixed", top: 16, right: 16, background: toast.type === "error" ? "#e53e3e" : "#38a169", color: "#fff", padding: "10px 20px", fontWeight: 700, fontSize: 13, zIndex: 999 }}>
-          {toast.msg}
-        </div>
-      )}
+      {toast && <div style={{ position: "fixed", top: 16, right: 16, background: toast.type === "error" ? "#e53e3e" : "#38a169", color: "#fff", padding: "10px 20px", fontWeight: 700, fontSize: 13, zIndex: 999 }}>{toast.msg}</div>}
 
-      {view === "list" && (
-        <InvoiceList
-          invoices={invoices}
-          onNew={() => { setEditInvoice(null); setView("form"); }}
-          onView={viewInvoice}
-          onEdit={editInvoiceHandler}
-          onDelete={deleteInvoice}
-        />
-      )}
+      {view === "list" && <InvoiceList invoices={invoices} onNew={() => { setEditData(null); setView("form"); }} onView={viewInvoice} onEdit={editInvoice} onCancel={cancelInvoice} />}
 
-      {view === "form" && (
-        <InvoiceForm
-          initial={editInvoice}
-          onSave={save}
-          onCancel={() => setView("list")}
-        />
-      )}
+      {view === "form" && <InvoiceForm initial={editData} onSave={save} onCancel={() => setView("list")} />}
 
-      {view === "preview" && selectedInvoice && (
+      {view === "preview" && selected && (
         <div>
-          {/* Action Bar */}
           <div className="no-print" style={{ display: "flex", gap: 10, padding: "16px 32px", borderBottom: "1px solid #e8e8e8", flexWrap: "wrap", alignItems: "center" }}>
             <button onClick={() => setView("list")} style={{ ...S.btnOutline, padding: "8px 16px" }}>← BACK</button>
-            <button onClick={printInvoice} style={S.btnPrimary}>🖨 PRINT / DOWNLOAD PDF</button>
-            <button onClick={whatsappShare} style={{ ...S.btnPrimary, background: "#25d366" }}>📱 SHARE ON WHATSAPP</button>
-            <button onClick={() => editInvoiceHandler(selectedInvoice)} style={{ ...S.btnOutline, padding: "8px 16px" }}>EDIT</button>
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: "#888" }}>PAYMENT:</span>
-              {["paid", "unpaid", "partial"].map(status => (
-                <button key={status} onClick={() => updatePaymentStatus(selectedInvoice.id, status)}
-                  style={{ padding: "6px 12px", fontSize: 10, fontWeight: 700, cursor: "pointer", border: "1px solid", borderColor: selectedInvoice.payment_status === status ? "#1a1a1a" : "#ddd", background: selectedInvoice.payment_status === status ? "#1a1a1a" : "#fff", color: selectedInvoice.payment_status === status ? "#fff" : "#444" }}>
-                  {status.toUpperCase()}
-                </button>
-              ))}
-            </div>
+            {selected.status !== "cancelled" ? (
+              <>
+                <button onClick={() => window.print()} style={S.btnPrimary}>🖨 PRINT / PDF</button>
+                <button onClick={whatsapp} style={{ ...S.btnPrimary, background: "#25d366" }}>📱 WHATSAPP</button>
+                <button onClick={() => editInvoice(selected)} style={{ ...S.btnOutline, padding: "8px 16px" }}>EDIT</button>
+                <button onClick={() => cancelInvoice(selected)} style={{ ...S.btnOutline, padding: "8px 16px", color: "#e53e3e", borderColor: "#e53e3e" }}>CANCEL INVOICE</button>
+                <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: "#888" }}>PAYMENT:</span>
+                  {["paid", "unpaid", "partial"].map(s => (
+                    <button key={s} onClick={() => updatePayment(selected.id, s)}
+                      style={{ padding: "6px 12px", fontSize: 10, fontWeight: 700, cursor: "pointer", border: "1px solid", borderColor: selected.payment_status === s ? "#1a1a1a" : "#ddd", background: selected.payment_status === s ? "#1a1a1a" : "#fff", color: selected.payment_status === s ? "#fff" : "#444" }}>
+                      {s.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ padding: "8px 16px", background: "#fff5f5", color: "#e53e3e", fontWeight: 700, fontSize: 12 }}>⚠️ THIS INVOICE IS CANCELLED</div>
+            )}
           </div>
-          <InvoicePreview invoice={selectedInvoice} items={selectedItems} />
+          <InvoicePreview invoice={selected} items={selectedItems} />
         </div>
       )}
     </div>
