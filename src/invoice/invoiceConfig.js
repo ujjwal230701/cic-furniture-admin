@@ -14,7 +14,7 @@ export const SELLER = {
 export const BANK = {
   name: "Punjab National Bank",
   branch: "Industrial Area, Phase-2, Chandigarh",
-  account: "32470021000150236",
+  account: "3247002100150236",
   ifsc: "PUNB0324700",
 };
 
