@@ -1,5 +1,5 @@
 export const IS = {
-  page: { maxWidth: 794, margin: "0 auto", padding: 40, background: "#fff", fontFamily: "Arial, sans-serif", fontSize: 13, color: "#1a1a1a" },
+  page: { maxWidth: 794, margin: "0 auto", padding: "40px 32px", background: "#fff", fontFamily: "Arial, sans-serif", fontSize: 13, color: "#1a1a1a" },
   header: { display: "flex", justifyContent: "space-between", marginBottom: 32, alignItems: "flex-start" },
   sellerName: { fontSize: 16, fontWeight: 800, marginBottom: 4 },
   sellerDetail: { fontSize: 12, color: "#444", lineHeight: 1.8 },
@@ -25,12 +25,28 @@ export const IS = {
   sectionTitle: { fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#888", marginBottom: 8 },
   bankDetail: { fontSize: 12, color: "#444", lineHeight: 1.8 },
   terms: { fontSize: 12, color: "#555", lineHeight: 1.8 },
-  printCSS: `
-    @media print {
-      body * { visibility: hidden; }
-      #invoice-preview, #invoice-preview * { visibility: visible; }
-      #invoice-preview { position: absolute; left: 0; top: 0; width: 100%; }
-      .no-print { display: none !important; }
+printCSS: `
+  @media print {
+    body * { visibility: hidden; }
+    #invoice-preview, #invoice-preview * { visibility: visible; }
+    #invoice-preview { 
+      position: absolute; 
+      left: 0; 
+      top: 0; 
+      width: 100%;
+      padding: 10mm 8mm;
+      box-sizing: border-box;
     }
-  `,
+    #invoice-preview table {
+      width: 100% !important;
+      font-size: 10px !important;
+      table-layout: fixed !important;
+    }
+    #invoice-preview th, #invoice-preview td {
+      padding: 5px 3px !important;
+      font-size: 10px !important;
+    }
+    .no-print { display: none !important; }
+  }
+`,
 };
