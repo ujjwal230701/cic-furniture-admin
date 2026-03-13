@@ -70,8 +70,7 @@ export default function InvoicePreview({ invoice, items }) {
             <th style={{ ...IS.th, width: "10%" }}>HSN/SAC</th>
             <th style={{ ...IS.thRight, width: "7%" }}>Qty</th>
             <th style={{ ...IS.thRight, width: "12%" }}>Rate</th>
-            <th style={{ ...IS.thRight, width: "8%" }}>Disc%</th>
-            <th style={{ ...IS.thRight, width: "12%" }}>Final Rate</th>
+            <th style={{ ...IS.thRight, width: "15%" }}>Final Rate</th>
             <th style={{ ...IS.thRight, width: "10%" }}>{gstType === "intra" ? "CGST/SGST" : "IGST"}</th>
             <th style={{ ...IS.thRight, width: "11%" }}>Amount</th>
           </tr>
@@ -90,9 +89,9 @@ export default function InvoicePreview({ invoice, items }) {
                 <td style={IS.tdRight}>{item.quantity}<br /><span style={{ fontSize: 11, color: "#888" }}>pcs</span></td>
                 <td style={IS.tdRight}>{fmt(item.catalogue_price || item.unit_price)}</td>
                 <td style={IS.tdRight}>
-                  {item.discount_pct > 0 ? <span style={{ color: "#38a169", fontWeight: 700 }}>{item.discount_pct}%</span> : "—"}
+                  {fmt(priceAfterDiscount || basePrice)}
+                  {item.discount_pct > 0 && <><br /><span style={{ fontSize: 11, color: "#38a169" }}>{item.discount_pct}% off</span></>}
                 </td>
-                <td style={IS.tdRight}>{fmt(priceAfterDiscount || basePrice)}</td>
                 <td style={IS.tdRight}>{fmt(gstAmt * item.quantity)}<br /><span style={{ fontSize: 11, color: "#888" }}>{item.gst_rate}%</span></td>
                 <td style={IS.tdRight}>{fmt(lineTotal)}</td>
               </tr>
