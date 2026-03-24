@@ -3,6 +3,7 @@ import { supabase } from "./supabaseClient";
 import { CATEGORIES } from "./config";
 import { Toast } from "./components";
 import ProductForm from "./ProductForm";
+import CsvImportModal from "./CsvImportModal";
 import { S } from "./styles";
 
 const fmt = (p) => `₹${p.toLocaleString("en-IN")}`;
@@ -12,6 +13,7 @@ export default function ProductsTab() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [toast, setToast] = useState(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
@@ -100,12 +102,25 @@ const save = async (form, images) => {
           onCancel={() => { setShowForm(false); setEditProduct(null); }}
         />
       )}
+      {showCsvImport && (
+        <CsvImportModal
+          onClose={() => setShowCsvImport(false)}
+          onSuccess={(count) => {
+            setShowCsvImport(false);
+            showToast(`${count} product${count !== 1 ? "s" : ""} imported successfully!`);
+            fetchProducts();
+          }}
+        />
+      )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>
           Products <span style={{ fontSize: 13, color: "#888", fontWeight: 400 }}>({products.length} total)</span>
         </div>
-        <button onClick={() => setShowForm(true)} style={S.btnPrimary}>+ ADD PRODUCT</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setShowCsvImport(true)} style={S.btnOutline}>IMPORT CSV</button>
+          <button onClick={() => setShowForm(true)} style={S.btnPrimary}>+ ADD PRODUCT</button>
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
