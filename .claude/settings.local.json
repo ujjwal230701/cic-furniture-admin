@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/Ujjwal/cic-furniture-admin -type f \\\\\\(-name *.sql -o -name *migration* -o -name *schema* \\\\\\))",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(find C:UsersUjjwalcic-furniture-admin -type f -name *.sql -o -name *migration* -o -name *schema*)"
+    ]
+  }
+}
