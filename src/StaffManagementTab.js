@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
 import { useAuth } from "./AuthProvider";
-import { SUPABASE_KEY } from "./config";
 import { S } from "./styles";
 import { Toast } from "./components";
 
@@ -43,21 +42,45 @@ export default function StaffManagementTab() {
     }
     setSaving(true);
 
-    const { error } = await supabase.functions.invoke("create-staff", {
-      body: { name: form.name, email: form.email, password: form.password },
-      headers: {
-        Authorization: `Bearer ${session?.access_token}`,
-        apikey: SUPABASE_KEY,
-      },
+    // Step 1: Create the auth user
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
     });
 
-    setSaving(false);
-    if (error) {
-      let msg = error.message;
-      try { const body = await error.context?.json(); msg = body?.error || msg; } catch {}
-      showToast(`Error: ${msg}`, "error");
+    if (signUpError) {
+      setSaving(false);
+      showToast(`Error: ${signUpError.message}`, "error");
       return;
     }
+
+    const newUserId = signUpData.user?.id;
+    if (!newUserId) {
+      setSaving(false);
+      showToast("Failed to create user account", "error");
+      return;
+    }
+
+    // If email confirmation is disabled, signUp() creates a new session and
+    // replaces the owner's — restore it before the insert so RLS passes.
+    if (signUpData.session) {
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
+    }
+
+    // Step 2: Insert user_profiles row — RLS "owner insert" policy allows this
+    const { error: profileError } = await supabase
+      .from("user_profiles")
+      .insert({ id: newUserId, email: form.email, name: form.name, role: "staff" });
+
+    setSaving(false);
+    if (profileError) {
+      showToast(`Error: ${profileError.message}`, "error");
+      return;
+    }
+
     showToast("Staff account created");
     setForm({ name: "", email: "", password: "" });
     setShowForm(false);
