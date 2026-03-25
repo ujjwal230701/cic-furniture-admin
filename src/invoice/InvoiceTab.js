@@ -29,14 +29,14 @@ export default function InvoiceTab({ role }) {
       const oldItems = await fetchItems(editData.id);
       await supabase.from("invoices").update(invoiceData).eq("id", editData.id);
       await supabase.from("invoice_items").delete().eq("invoice_id", editData.id);
-      await adjustStock(oldItems, items);
+      await adjustStock(oldItems, items, editData.id);
       invoiceId = editData.id;
       showToast("Invoice updated!");
     } else {
       const { data, error } = await supabase.from("invoices").insert([{ ...invoiceData, status: "active" }]).select();
       if (error) { showToast(`Error: ${error.message}`, "error"); return; }
       invoiceId = data[0].id;
-      await deductStock(items);
+      await deductStock(items, invoiceId);
       showToast("Invoice created!");
     }
 
@@ -68,7 +68,7 @@ export default function InvoiceTab({ role }) {
     if (!window.confirm(`Cancel ${inv.invoice_number}? Stock will be restored.`)) return;
     const items = await fetchItems(inv.id);
     await supabase.from("invoices").update({ status: "cancelled" }).eq("id", inv.id);
-    await restoreStock(items);
+    await restoreStock(items, inv.id);
     showToast(`${inv.invoice_number} cancelled — stock restored`);
     fetchInvoices();
   };

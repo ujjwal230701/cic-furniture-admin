@@ -4,6 +4,7 @@ import { CATEGORIES } from "./config";
 import { Toast } from "./components";
 import ProductForm from "./ProductForm";
 import CsvImportModal from "./CsvImportModal";
+import ReceiveStockModal from "./ReceiveStockModal";
 import { S } from "./styles";
 
 const fmt = (p) => `₹${p.toLocaleString("en-IN")}`;
@@ -18,6 +19,7 @@ export default function ProductsTab({ role }) {
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [showCsvImport, setShowCsvImport] = useState(false);
+  const [receiveProduct, setReceiveProduct] = useState(null);
   const [toast, setToast] = useState(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
@@ -107,6 +109,17 @@ const save = async (form, images) => {
           role={role}
         />
       )}
+      {receiveProduct && (
+        <ReceiveStockModal
+          product={receiveProduct}
+          onClose={() => setReceiveProduct(null)}
+          onSuccess={(qty) => {
+            setReceiveProduct(null);
+            showToast(`+${qty} units received for ${receiveProduct.name}`);
+            fetchProducts();
+          }}
+        />
+      )}
       {showCsvImport && (
         <CsvImportModal
           onClose={() => setShowCsvImport(false)}
@@ -167,6 +180,7 @@ const save = async (form, images) => {
               </div>
               {isOwner && (
                 <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  <button onClick={() => setReceiveProduct(p)} style={{ ...S.btnOutline, padding: "6px 12px" }}>+STOCK</button>
                   <button onClick={() => recordSale(p)} style={S.btnSuccess}>SALE</button>
                   <button onClick={() => setEditProduct(p)} style={{ ...S.btnOutline, padding: "6px 12px" }}>EDIT</button>
                   <button onClick={() => remove(p.id)} style={S.btnDanger}>DEL</button>
