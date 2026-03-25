@@ -43,25 +43,19 @@ export default function StaffManagementTab() {
     }
     setSaving(true);
 
-    console.log('session:', session?.access_token ? 'present' : 'NULL');
-    console.log('session token:', session?.access_token);
-    const res = await fetch("https://snjnphnxhoucvlnryqlb.supabase.co/functions/v1/create-staff", {
-      method: "POST",
+    const { error } = await supabase.functions.invoke("create-staff", {
+      body: { name: form.name, email: form.email, password: form.password },
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${session?.access_token}`,
-        "apikey": SUPABASE_KEY,
+        Authorization: `Bearer ${session?.access_token}`,
+        apikey: SUPABASE_KEY,
       },
-      body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
     });
 
-    console.log("fetch status:", res.status);
-    const resBody = await res.json().catch(() => ({}));
-    console.log("fetch body:", resBody);
-
     setSaving(false);
-    if (!res.ok) {
-      showToast(`Error: ${resBody?.error || res.status}`, "error");
+    if (error) {
+      let msg = error.message;
+      try { const body = await error.context?.json(); msg = body?.error || msg; } catch {}
+      showToast(`Error: ${msg}`, "error");
       return;
     }
     showToast("Staff account created");
