@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabaseClient";
 import { CATEGORIES } from "./config";
 import { S } from "./styles";
@@ -8,9 +8,26 @@ export default function ProductForm({ initial, onSave, onCancel }) {
     name: "", category: CATEGORIES[0], price: "", description: "",
     sku: "", stock: 0, sold: 0, in_stock: true, featured: false, image_url: ""
   });
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState(
+    initial?.image_url ? [{ url: initial.image_url, sort_order: 0 }] : []
+  );
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
+
+  useEffect(() => {
+    if (!initial?.id) return;
+    supabase
+      .from("products_images")
+      .select("image_url, sort_order")
+      .eq("product_id", initial.id)
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const extra = data.map(r => ({ url: r.image_url, sort_order: r.sort_order }));
+          setImages(prev => [...prev, ...extra]);
+        }
+      });
+  }, []);
 
   const uploadImage = async (file) => {
     if (images.length >= 5) { alert("Maximum 5 images per product"); return; }
