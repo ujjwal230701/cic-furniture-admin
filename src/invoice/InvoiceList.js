@@ -7,7 +7,7 @@ const statusColors = {
   partial: { bg: "#fffaf0", color: "#d97706" },
 };
 
-export default function InvoiceList({ invoices, onNew, onView, onEdit, onDelete }) {
+export default function InvoiceList({ invoices, onNew, onView, onEdit, onDelete, isOwner }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -32,8 +32,12 @@ export default function InvoiceList({ invoices, onNew, onView, onEdit, onDelete 
               </div>
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={() => onView(inv)} style={{ ...S.btnPrimary, padding: "6px 12px" }}>VIEW</button>
-                <button onClick={() => onEdit(inv)} style={{ ...S.btnOutline, padding: "6px 12px" }}>EDIT</button>
-                <button onClick={() => onDelete(inv.id)} style={{ background: "#e53e3e", color: "#fff", border: "none", padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>DEL</button>
+                {isOwner && (
+                  <>
+                    <button onClick={() => onEdit(inv)} style={{ ...S.btnOutline, padding: "6px 12px" }}>EDIT</button>
+                    <button onClick={() => onDelete(inv.id)} style={{ background: "#e53e3e", color: "#fff", border: "none", padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>DEL</button>
+                  </>
+                )}
               </div>
             </div>
           );

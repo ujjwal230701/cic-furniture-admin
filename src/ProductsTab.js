@@ -8,7 +8,8 @@ import { S } from "./styles";
 
 const fmt = (p) => `₹${p.toLocaleString("en-IN")}`;
 
-export default function ProductsTab() {
+export default function ProductsTab({ role }) {
+  const isOwner = role === "owner";
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -117,10 +118,12 @@ const save = async (form, images) => {
         <div style={{ fontSize: 18, fontWeight: 700 }}>
           Products <span style={{ fontSize: 13, color: "#888", fontWeight: 400 }}>({products.length} total)</span>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => setShowCsvImport(true)} style={S.btnOutline}>IMPORT CSV</button>
-          <button onClick={() => setShowForm(true)} style={S.btnPrimary}>+ ADD PRODUCT</button>
-        </div>
+        {isOwner && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setShowCsvImport(true)} style={S.btnOutline}>IMPORT CSV</button>
+            <button onClick={() => setShowForm(true)} style={S.btnPrimary}>+ ADD PRODUCT</button>
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
@@ -152,11 +155,13 @@ const save = async (form, images) => {
                   {p.featured && <span style={{ background: "#1a1a1a", color: "#fff", padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>FEATURED</span>}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                <button onClick={() => recordSale(p)} style={S.btnSuccess}>SALE</button>
-                <button onClick={() => setEditProduct(p)} style={{ ...S.btnOutline, padding: "6px 12px" }}>EDIT</button>
-                <button onClick={() => remove(p.id)} style={S.btnDanger}>DEL</button>
-              </div>
+              {isOwner && (
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  <button onClick={() => recordSale(p)} style={S.btnSuccess}>SALE</button>
+                  <button onClick={() => setEditProduct(p)} style={{ ...S.btnOutline, padding: "6px 12px" }}>EDIT</button>
+                  <button onClick={() => remove(p.id)} style={S.btnDanger}>DEL</button>
+                </div>
+              )}
             </div>
           ))}
           {filtered.length === 0 && (
