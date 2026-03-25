@@ -5,7 +5,8 @@ import { S } from "./styles";
 
 const fmt = (p) => `₹${p.toLocaleString("en-IN")}`;
 
-export default function DashboardTab() {
+export default function DashboardTab({ role }) {
+  const isOwner = role === "owner";
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
@@ -15,6 +16,14 @@ export default function DashboardTab() {
   const totalValue = products.reduce((s, p) => s + (p.price * p.stock), 0);
   const totalRevenue = products.reduce((s, p) => s + (p.price * (p.sold || 0)), 0);
   const lowStock = products.filter(p => p.stock <= 5);
+
+  // Owner-only margin calculations — only include products with cost_price set
+  const costProducts = products.filter(p => p.cost_price != null && p.cost_price > 0);
+  const totalCostValue = costProducts.reduce((s, p) => s + (p.cost_price * p.stock), 0);
+  const totalSellValue = costProducts.reduce((s, p) => s + (p.price * p.stock), 0);
+  const overallMargin = totalCostValue > 0
+    ? (((totalSellValue - totalCostValue) / totalCostValue) * 100).toFixed(1)
+    : null;
 
   return (
     <div>
@@ -34,6 +43,26 @@ export default function DashboardTab() {
               <span style={{ fontWeight: 700, color: "#c53030" }}>{p.stock} left</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {isOwner && costProducts.length > 0 && (
+        <div style={{ ...S.card, marginBottom: 24 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "#888", marginBottom: 16 }}>OWNER — MARGIN OVERVIEW ({costProducts.length} products with cost data)</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#888", letterSpacing: 1, marginBottom: 4 }}>COST VALUE</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#d97706" }}>{fmt(totalCostValue)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#888", letterSpacing: 1, marginBottom: 4 }}>SELLING VALUE</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#38a169" }}>{fmt(totalSellValue)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: "#888", letterSpacing: 1, marginBottom: 4 }}>OVERALL MARKUP</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: +overallMargin >= 0 ? "#38a169" : "#e53e3e" }}>{overallMargin}%</div>
+            </div>
+          </div>
         </div>
       )}
 

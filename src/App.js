@@ -19,7 +19,7 @@ function AppInner() {
   if (!session) return <LoginScreen />;
 
   const pages = {
-    dashboard: <DashboardTab />,
+    dashboard: <DashboardTab role={role} />,
     products: <ProductsTab role={role} />,
     invoices: <InvoiceTab role={role} />,
     ...(role === "owner" ? { staff: <StaffManagementTab /> } : {}),

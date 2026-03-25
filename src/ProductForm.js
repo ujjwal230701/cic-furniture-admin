@@ -3,10 +3,12 @@ import { supabase } from "./supabaseClient";
 import { CATEGORIES } from "./config";
 import { S } from "./styles";
 
-export default function ProductForm({ initial, onSave, onCancel }) {
+export default function ProductForm({ initial, onSave, onCancel, role }) {
+  const isOwner = role === "owner";
   const [form, setForm] = useState(initial || {
     name: "", category: CATEGORIES[0], price: "", description: "",
-    sku: "", stock: 0, sold: 0, in_stock: true, featured: false, image_url: ""
+    sku: "", stock: 0, sold: 0, in_stock: true, featured: false, image_url: "",
+    cost_price: "", floor_price: "",
   });
   const [images, setImages] = useState(
     initial?.image_url ? [{ url: initial.image_url, sort_order: 0 }] : []
@@ -53,9 +55,20 @@ export default function ProductForm({ initial, onSave, onCancel }) {
     setForm(f => ({ ...f, image_url: updated.length > 0 ? updated[0].url : "" }));
   };
 
+  const markup = form.price && form.cost_price && +form.cost_price > 0
+    ? (((+form.price - +form.cost_price) / +form.cost_price) * 100).toFixed(1)
+    : null;
+
   const save = async () => {
     if (!form.name || !form.price) return;
-    const savedForm = { ...form, price: +form.price, stock: +form.stock, sold: +form.sold };
+    const savedForm = {
+      ...form,
+      price: +form.price,
+      stock: +form.stock,
+      sold: +form.sold,
+      cost_price: form.cost_price !== "" && form.cost_price !== null ? +form.cost_price : null,
+      floor_price: form.floor_price !== "" && form.floor_price !== null ? +form.floor_price : null,
+    };
     onSave(savedForm, images);
   };
 
@@ -98,6 +111,28 @@ export default function ProductForm({ initial, onSave, onCancel }) {
             <input type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} style={S.input} />
           </div>
         ))}
+
+        {/* Owner-only pricing fields */}
+        {isOwner && (
+          <div style={{ background: "#f9f9f9", border: "1px solid #e8e8e8", padding: 16, marginBottom: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "#888", marginBottom: 12 }}>OWNER — COST & FLOOR</div>
+            <div style={{ display: "flex", gap: 12, marginBottom: markup ? 10 : 0 }}>
+              <div style={{ flex: 1 }}>
+                <label style={S.label}>COST PRICE (₹)</label>
+                <input type="number" value={form.cost_price ?? ""} onChange={e => setForm({ ...form, cost_price: e.target.value })} style={S.input} placeholder="0" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={S.label}>FLOOR PRICE (₹)</label>
+                <input type="number" value={form.floor_price ?? ""} onChange={e => setForm({ ...form, floor_price: e.target.value })} style={S.input} placeholder="0" />
+              </div>
+            </div>
+            {markup !== null && (
+              <div style={{ fontSize: 12, color: +markup >= 0 ? "#38a169" : "#e53e3e", fontWeight: 700 }}>
+                MARKUP: {markup}%
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ marginBottom: 16 }}>
           <label style={S.label}>CATEGORY</label>

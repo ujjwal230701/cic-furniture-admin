@@ -8,6 +8,9 @@ import { S } from "./styles";
 
 const fmt = (p) => `₹${p.toLocaleString("en-IN")}`;
 
+// Set to true to allow staff to see floor price during negotiations
+const STAFF_CAN_SEE_FLOOR_PRICE = true;
+
 export default function ProductsTab({ role }) {
   const isOwner = role === "owner";
   const [products, setProducts] = useState([]);
@@ -101,6 +104,7 @@ const save = async (form, images) => {
           initial={editProduct}
           onSave={save}
           onCancel={() => { setShowForm(false); setEditProduct(null); }}
+          role={role}
         />
       )}
       {showCsvImport && (
@@ -154,6 +158,12 @@ const save = async (form, images) => {
                   <span style={{ color: "#888" }}>Sold: {p.sold || 0}</span>
                   {p.featured && <span style={{ background: "#1a1a1a", color: "#fff", padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>FEATURED</span>}
                 </div>
+                {(isOwner || STAFF_CAN_SEE_FLOOR_PRICE) && (p.cost_price != null || p.floor_price != null) && (
+                  <div style={{ fontSize: 11, marginTop: 4, display: "flex", gap: 12, color: "#888" }}>
+                    {isOwner && p.cost_price != null && <span>Cost: <span style={{ fontWeight: 700, color: "#d97706" }}>{fmt(p.cost_price)}</span></span>}
+                    {(isOwner || STAFF_CAN_SEE_FLOOR_PRICE) && p.floor_price != null && <span>Floor: <span style={{ fontWeight: 700, color: "#555" }}>{fmt(p.floor_price)}</span></span>}
+                  </div>
+                )}
               </div>
               {isOwner && (
                 <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
