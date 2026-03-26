@@ -3,7 +3,7 @@ import { supabase } from "./supabaseClient";
 import { CATEGORIES } from "./config";
 import { S } from "./styles";
 
-const PREVIEW_COLS = ["name", "sku", "category", "price", "stock", "featured", "in_stock", "description"];
+const PREVIEW_COLS = ["name", "sku", "category", "price", "cost_price", "floor_price", "stock", "featured", "in_stock", "description"];
 
 function parseBool(val) {
   return ["true", "1", "yes"].includes(String(val ?? "").toLowerCase().trim());
@@ -46,6 +46,8 @@ function parseCSV(text) {
     if (!String(raw.name || "").trim()) errors.push("name is required");
     if (!raw.price || isNaN(Number(raw.price))) errors.push("price must be a number");
     if (raw.stock && isNaN(Number(raw.stock))) errors.push("stock must be a number");
+    if (raw.cost_price && isNaN(Number(raw.cost_price))) errors.push("cost_price must be a number");
+    if (raw.floor_price && isNaN(Number(raw.floor_price))) errors.push("floor_price must be a number");
 
     return { _index: i + 1, _errors: errors, ...raw };
   });
@@ -60,6 +62,8 @@ function toProductRow(raw) {
     category: String(raw.category || "").trim() || CATEGORIES[0],
     price: Number(raw.price) || 0,
     stock: Number(raw.stock) || 0,
+    cost_price: raw.cost_price && !isNaN(Number(raw.cost_price)) ? Number(raw.cost_price) : null,
+    floor_price: raw.floor_price && !isNaN(Number(raw.floor_price)) ? Number(raw.floor_price) : null,
     description: String(raw.description || "").trim() || null,
     featured: parseBool(raw.featured),
     in_stock: String(raw.in_stock || "").trim() !== "" ? parseBool(raw.in_stock) : true,
@@ -115,7 +119,7 @@ export default function CsvImportModal({ onClose, onSuccess }) {
 
         {/* Instructions */}
         <div style={{ background: "#f9f9f9", border: "1px solid #eee", padding: 14, fontSize: 12, color: "#555", lineHeight: 1.9 }}>
-          <strong>Supported columns:</strong> name*, sku, category, price*, stock, description, featured, in_stock<br />
+          <strong>Supported columns:</strong> name*, sku, category, price*, cost_price, floor_price, stock, description, featured, in_stock<br />
           <strong>featured</strong> / <strong>in_stock</strong>: <code>true</code> or <code>false</code> &nbsp;·&nbsp;
           <strong>price</strong> / <strong>stock</strong>: numbers &nbsp;·&nbsp;
           Columns marked <strong>*</strong> are required.<br />
