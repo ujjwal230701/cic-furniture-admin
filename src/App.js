@@ -5,6 +5,7 @@ import DashboardTab from "./DashboardTab";
 import ProductsTab from "./ProductsTab";
 import InvoiceTab from "./invoice/InvoiceTab";
 import StaffManagementTab from "./StaffManagementTab";
+import SkuReferenceTab from "./SkuReferenceTab";
 
 function AppInner() {
   const { session, profile, role, signOut, loading } = useAuth();
@@ -22,6 +23,7 @@ function AppInner() {
     dashboard: <DashboardTab role={role} />,
     products: <ProductsTab role={role} />,
     invoices: <InvoiceTab role={role} />,
+    "sku-reference": <SkuReferenceTab role={role} />,
     ...(role === "owner" ? { staff: <StaffManagementTab /> } : {}),
   };
 

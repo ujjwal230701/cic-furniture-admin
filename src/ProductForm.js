@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabaseClient";
 import { CATEGORIES } from "./config";
 import { S } from "./styles";
+import SkuBuilder from "./SkuBuilder";
 
 export default function ProductForm({ initial, onSave, onCancel, role }) {
   const isOwner = role === "owner";
@@ -83,7 +84,6 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
         <div style={{ marginBottom: 20 }}>
           <label style={S.label}>PRODUCT IMAGES ({images.length}/5)</label>
 
-          {/* Image Previews */}
           {images.length > 0 && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
               {images.map((img, i) => (
@@ -104,8 +104,22 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => e.target.files[0] && uploadImage(e.target.files[0])} />
         </div>
 
-        {/* Text Fields */}
-        {[["Product Name", "name", "text"], ["SKU", "sku", "text"], ["Price (₹)", "price", "number"], ["Stock Quantity", "stock", "number"]].map(([lbl, key, type]) => (
+        {/* Product Name */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={S.label}>PRODUCT NAME</label>
+          <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={S.input} />
+        </div>
+
+        {/* SKU Builder */}
+        <SkuBuilder
+          value={form.sku}
+          onChange={val => setForm(f => ({ ...f, sku: val }))}
+          isEdit={!!initial}
+          initialSku={initial?.sku || ""}
+        />
+
+        {/* Price & Stock */}
+        {[["Price (₹)", "price", "number"], ["Stock Quantity", "stock", "number"]].map(([lbl, key, type]) => (
           <div key={key} style={{ marginBottom: 16 }}>
             <label style={S.label}>{lbl.toUpperCase()}</label>
             <input type={type} value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} style={S.input} />

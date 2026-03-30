@@ -9,6 +9,7 @@ export function AdminNav({ tab, setTab, onLogout, role, userName }) {
     { key: "dashboard", label: "Dashboard" },
     { key: "products", label: "Products" },
     { key: "invoices", label: "Invoices" },
+    { key: "sku-reference", label: "SKU Reference" },
     ...(role === "owner" ? [{ key: "staff", label: "Staff" }] : []),
   ];
 
