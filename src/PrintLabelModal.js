@@ -127,7 +127,7 @@ export default function PrintLabelModal({ product, onClose }) {
     }
 
     .label-price {
-      font-size: 3.5mm;
+      font-size: 6.5mm;
       font-weight: 800;
       color: #000;
     }
@@ -179,7 +179,7 @@ export default function PrintLabelModal({ product, onClose }) {
             <div style={{ fontSize: 10, letterSpacing: "0.5px", color: "#555", fontFamily: "monospace" }}>
               {product.sku || "—"}
             </div>
-            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>
+            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.5px" }}>
               {fmt(product.price)}
             </div>
           </div>
