@@ -7,6 +7,7 @@ export default function PrintLabelModal({ product, onClose }) {
   const [copies, setCopies] = useState(1);
   const [customInput, setCustomInput] = useState("");
   const [useCustom, setUseCustom] = useState(false);
+  const [skip, setSkip] = useState(0);
 
   const totalCopies = useCustom
     ? Math.max(1, Math.min(100, parseInt(customInput) || 1))
@@ -50,7 +51,11 @@ export default function PrintLabelModal({ product, onClose }) {
   const printLabels = () => {
     const labelHtml = `<div class="label"><div class="label-name">${escapeHtml(product.name)}</div><div class="label-sku">${escapeHtml(product.sku || "\u2014")}</div><div class="label-price">${fmt(product.price)}</div></div>`;
 
-    const allLabels = Array(totalCopies).fill(labelHtml).join("");
+    const emptyLabel = `<div class="label"></div>`;
+
+    const allLabels = 
+      Array(skip).fill(emptyLabel).join("") + 
+      Array(totalCopies).fill(labelHtml).join("");
 
     const html = `<!DOCTYPE html>
 <html>
@@ -108,7 +113,9 @@ export default function PrintLabelModal({ product, onClose }) {
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
     }
-
+    .label {
+      padding-left: 7mm !important;
+    }
     .label-sku {
       font-size: 2.5mm;
       font-family: 'Courier New', monospace;
@@ -222,6 +229,19 @@ export default function PrintLabelModal({ product, onClose }) {
               style={{ ...S.input, marginTop: 10 }}
             />
           )}
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={S.label}>SKIP LABELS (0–23)</label>
+          <input
+            type="number"
+            min="0"
+            max="23"
+            value={skip}
+            onChange={e => setSkip(Number(e.target.value))}
+            style={{ ...S.input, marginTop: 8 }}
+            placeholder="e.g., 10"
+          />
         </div>
 
         <div style={{ fontSize: 12, color: "#888", marginBottom: 24 }}>
