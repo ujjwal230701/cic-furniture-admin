@@ -78,6 +78,11 @@ export function generateInvoiceNumber(lastNumber) {
   return `INV-${num}`;
 }
 
+export function generateQuotationNumber(lastNumber) {
+  const num = lastNumber ? parseInt(lastNumber.replace("QUO-", "")) + 1 : 1;
+  return `QUO-${String(num).padStart(3, "0")}`;
+}
+
 // ── Format date ────────────────────────────
 export function formatDate(date) {
   return new Date(date).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });

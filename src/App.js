@@ -4,6 +4,7 @@ import { AdminNav, LoginScreen } from "./components";
 import DashboardTab from "./DashboardTab";
 import ProductsTab from "./ProductsTab";
 import InvoiceTab from "./invoice/InvoiceTab";
+import QuotationTab from "./invoice/QuotationTab";
 import StaffManagementTab from "./StaffManagementTab";
 import SkuReferenceTab from "./SkuReferenceTab";
 
@@ -23,6 +24,7 @@ function AppInner() {
     dashboard: <DashboardTab role={role} />,
     products: <ProductsTab role={role} />,
     invoices: <InvoiceTab role={role} />,
+    quotations: <QuotationTab role={role} />,
     "sku-reference": <SkuReferenceTab role={role} />,
     ...(role === "owner" ? { staff: <StaffManagementTab /> } : {}),
   };
