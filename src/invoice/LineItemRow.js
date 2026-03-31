@@ -4,9 +4,10 @@ import { calcItemTotal, fmt } from "./invoiceUtils";
 import { supabase } from "../supabaseClient";
 
 export default function LineItemRow({ item, index, products, gstInclusive, onChange, onRemove, showRemove }) {
-  const { lineTotal } = calcItemTotal(item, gstInclusive);
+  const { lineTotal, basePrice } = calcItemTotal(item, gstInclusive);
   const isManual = !item.product_id && item.product_name;
   const [showDropdown, setShowDropdown] = useState(false);
+  const [draftFinalRate, setDraftFinalRate] = useState(null);
 
   const finalRate = item.catalogue_price * (1 - (item.discount_pct || 0) / 100);
 
@@ -117,10 +118,18 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
       <td style={{ padding: "8px 4px", width: 90 }}>
         <input
           type="number"
-          value={finalRate}
-          onChange={e => handleFinalRateChange(e.target.value)}
+          value={draftFinalRate !== null ? draftFinalRate : finalRate}
+          onFocus={() => setDraftFinalRate(finalRate)}
+          onChange={e => setDraftFinalRate(e.target.value)}
+          onBlur={() => { handleFinalRateChange(draftFinalRate); setDraftFinalRate(null); }}
+          onKeyDown={e => { if (e.key === "Enter") { handleFinalRateChange(draftFinalRate); setDraftFinalRate(null); e.target.blur(); } }}
           style={{ ...inputStyle, textAlign: "right", fontWeight: 600 }}
         />
+        {gstInclusive && (
+          <div style={{ fontSize: 10, color: "#888", textAlign: "right", marginTop: 2 }}>
+            ₹{fmt(basePrice)} excl. GST
+          </div>
+        )}
       </td>
 
       {/* GST % */}
