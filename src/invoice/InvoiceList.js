@@ -7,7 +7,7 @@ const statusColors = {
   partial: { bg: "#fffaf0", color: "#d97706" },
 };
 
-export default function InvoiceList({ invoices, onNew, onView, onEdit, onDelete, isOwner }) {
+export default function InvoiceList({ invoices, onNew, onView, onEdit, onCancel, onDelete, isOwner }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -35,6 +35,9 @@ export default function InvoiceList({ invoices, onNew, onView, onEdit, onDelete,
                 {isOwner && (
                   <>
                     <button onClick={() => onEdit(inv)} style={{ ...S.btnOutline, padding: "6px 12px" }}>EDIT</button>
+                    {inv.status !== "cancelled" && (
+                      <button onClick={() => onCancel(inv)} style={{ ...S.btnOutline, padding: "6px 12px", color: "#e53e3e", borderColor: "#e53e3e" }}>CANCEL</button>
+                    )}
                     <button onClick={() => onDelete(inv.id)} style={{ background: "#e53e3e", color: "#fff", border: "none", padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>DEL</button>
                   </>
                 )}

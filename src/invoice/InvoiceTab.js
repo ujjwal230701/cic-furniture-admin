@@ -64,6 +64,16 @@ export default function InvoiceTab({ role }) {
   const viewInvoice = async (inv) => { setSelected(inv); setSelectedItems(await fetchItems(inv.id)); setView("preview"); };
   const editInvoice = async (inv) => { setEditData({ ...inv, items: await fetchItems(inv.id) }); setView("form"); };
 
+  const deleteInvoice = async (id) => {
+    if (!window.confirm("Permanently delete this invoice? Stock will be restored and this cannot be undone.")) return;
+    const items = await fetchItems(id);
+    await restoreStock(items, id);
+    await supabase.from("invoice_items").delete().eq("invoice_id", id);
+    await supabase.from("invoices").delete().eq("id", id);
+    showToast("Invoice deleted");
+    fetchInvoices();
+  };
+
   const cancelInvoice = async (inv) => {
     if (!window.confirm(`Cancel ${inv.invoice_number}? Stock will be restored.`)) return;
     const items = await fetchItems(inv.id);
@@ -91,7 +101,7 @@ export default function InvoiceTab({ role }) {
     <div>
       {toast && <div style={{ position: "fixed", top: 16, right: 16, background: toast.type === "error" ? "#e53e3e" : "#38a169", color: "#fff", padding: "10px 20px", fontWeight: 700, fontSize: 13, zIndex: 999 }}>{toast.msg}</div>}
 
-      {view === "list" && <InvoiceList invoices={invoices} onNew={() => { setEditData(null); setView("form"); }} onView={viewInvoice} onEdit={editInvoice} onCancel={cancelInvoice} isOwner={isOwner} />}
+      {view === "list" && <InvoiceList invoices={invoices} onNew={() => { setEditData(null); setView("form"); }} onView={viewInvoice} onEdit={editInvoice} onCancel={cancelInvoice} onDelete={deleteInvoice} isOwner={isOwner} />}
 
       {view === "form" && <InvoiceForm initial={editData} onSave={save} onCancel={() => setView("list")} />}
 
