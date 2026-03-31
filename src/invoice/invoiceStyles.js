@@ -3,8 +3,8 @@ export const IS = {
   header: { display: "flex", justifyContent: "space-between", marginBottom: 32, alignItems: "flex-start" },
   sellerName: { fontSize: 16, fontWeight: 800, marginBottom: 4 },
   sellerDetail: { fontSize: 12, color: "#444", lineHeight: 1.8 },
-  invoiceTitle: { fontSize: 32, fontWeight: 800, textAlign: "right", letterSpacing: 2 },
-  invoiceNumber: { fontSize: 13, textAlign: "right", color: "#555", marginTop: 4 },
+  invoiceTitle: { fontSize: 32, fontWeight: 800, textAlign: "center", letterSpacing: 2 },
+  invoiceNumber: { fontSize: 13, textAlign: "center", color: "#555", marginTop: 4 },
   metaRow: { display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 13, borderBottom: "1px solid #f0f0f0" },
   metaLabel: { color: "#666" },
   billTo: { marginBottom: 24 },
@@ -23,7 +23,8 @@ export const IS = {
   totalInWords: { fontSize: 11, color: "#666", fontStyle: "italic", marginTop: 8, textAlign: "right" },
   divider: { borderTop: "1px solid #e8e8e8", margin: "20px 0" },
   sectionTitle: { fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#888", marginBottom: 8 },
-  bankDetail: { fontSize: 12, color: "#444", lineHeight: 1.8 },
+  bankSectionTitle: { fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#1a1a1a", marginBottom: 8 },
+  bankDetail: { fontSize: 12, color: "#1a1a1a", lineHeight: 1.8, fontWeight: 500 },
   terms: { fontSize: 12, color: "#555", lineHeight: 1.8 },
 printCSS: `
   @media print {
@@ -45,6 +46,8 @@ printCSS: `
     #invoice-preview th, #invoice-preview td {
       padding: 5px 3px !important;
       font-size: 10px !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
     }
     .no-print { display: none !important; }
   }
