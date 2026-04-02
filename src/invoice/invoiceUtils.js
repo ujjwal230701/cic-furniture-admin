@@ -85,5 +85,9 @@ export function generateQuotationNumber(lastNumber) {
 
 // ── Format date ────────────────────────────
 export function formatDate(date) {
-  return new Date(date).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const d = new Date(date);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
 }
