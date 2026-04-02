@@ -8,6 +8,8 @@ export default function PrintLabelModal({ product, onClose }) {
   const [customInput, setCustomInput] = useState("");
   const [useCustom, setUseCustom] = useState(false);
   const [skip, setSkip] = useState(0);
+  const [colour, setColour] = useState("");
+  const [dimensions, setDimensions] = useState("");
 
   const totalCopies = useCustom
     ? Math.max(1, Math.min(100, parseInt(customInput) || 1))
@@ -49,9 +51,9 @@ export default function PrintLabelModal({ product, onClose }) {
   };
 
   const printLabels = () => {
-    const labelHtml = `<div class="label"><div class="label-name">${escapeHtml(product.name)}</div><div class="label-sku">${escapeHtml(product.sku || "\u2014")}</div><div class="label-price">${fmt(product.price)}</div></div>`;
+    const labelHtml = `<div class="label"><div class="label-name">${escapeHtml(product.name)}</div><div class="label-sku">${escapeHtml(product.sku || "\u2014")}</div>${colour ? `<div class="label-meta">Colour: ${escapeHtml(colour)}</div>` : ""}${dimensions ? `<div class="label-meta">Dim: ${escapeHtml(dimensions)}</div>` : ""}<div class="label-price">${fmt(product.price)}</div></div>`;
 
-    const emptyLabel = `<div class="label"></div>`;
+    const emptyLabel = `<div class="label-empty"></div>`;
 
     const allLabels = 
       Array(skip).fill(emptyLabel).join("") + 
@@ -83,8 +85,8 @@ export default function PrintLabelModal({ product, onClose }) {
     .label-grid {
       width: 210mm;
       height: 297mm;
-      padding-top: 10.7mm;
-      padding-left: 4.65mm;
+      padding-top: 15.7mm;
+      padding-left: 5.65mm;
       display: grid;
       grid-template-columns: repeat(3, 63.5mm);
       grid-template-rows: repeat(8, 33.86mm);
@@ -93,14 +95,22 @@ export default function PrintLabelModal({ product, onClose }) {
     }
 
     .label {
-      width: 63.5mm;
-      height: 33.86mm;
+      width: 61.5mm;
+      height: 31.86mm;
+      margin: 1mm;
       padding: 3mm;
       overflow: hidden;
       display: flex;
       flex-direction: column;
       justify-content: center;
       gap: 1.5mm;
+      border: 0.4mm solid #000;
+      border-radius: 1mm;
+    }
+
+    .label-empty {
+      width: 63.5mm;
+      height: 33.86mm;
     }
 
     .label-name {
@@ -121,6 +131,14 @@ export default function PrintLabelModal({ product, onClose }) {
       font-family: 'Courier New', monospace;
       color: #333;
       letter-spacing: 0.3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .label-meta {
+      font-size: 2.3mm;
+      color: #444;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -169,7 +187,8 @@ export default function PrintLabelModal({ product, onClose }) {
             display: "inline-flex",
             flexDirection: "column",
             gap: 5,
-            border: "1.5px solid #1a1a1a",
+            border: "1.5px solid #000",
+            borderRadius: 4,
             padding: "8px 12px",
             minWidth: 180,
           }}>
@@ -179,9 +198,23 @@ export default function PrintLabelModal({ product, onClose }) {
             <div style={{ fontSize: 10, letterSpacing: "0.5px", color: "#555", fontFamily: "monospace" }}>
               {product.sku || "—"}
             </div>
+            {colour && <div style={{ fontSize: 9, color: "#444" }}>Colour: {colour}</div>}
+            {dimensions && <div style={{ fontSize: 9, color: "#444" }}>Dim: {dimensions}</div>}
             <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.5px" }}>
               {fmt(product.price)}
             </div>
+          </div>
+        </div>
+
+        {/* Colour & Dimensions */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+          <div>
+            <label style={S.label}>COLOUR</label>
+            <input value={colour} onChange={e => setColour(e.target.value)} style={{ ...S.input, marginTop: 6 }} placeholder="e.g. Walnut" />
+          </div>
+          <div>
+            <label style={S.label}>DIMENSIONS</label>
+            <input value={dimensions} onChange={e => setDimensions(e.target.value)} style={{ ...S.input, marginTop: 6 }} placeholder="e.g. 120×60×75 cm" />
           </div>
         </div>
 

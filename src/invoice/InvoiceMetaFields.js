@@ -21,6 +21,10 @@ export default function InvoiceMetaFields({ invoice, setInvoice }) {
         </select>
       </div>
       <div>
+        <label style={S.label}>DISPATCH DETAILS</label>
+        <input value={invoice.dispatch_details || ""} onChange={e => update("dispatch_details", e.target.value)} style={S.input} placeholder="Vehicle No., LR No., or Carrier Name" />
+      </div>
+      <div>
         <label style={S.label}>NOTES</label>
         <input value={invoice.notes} onChange={e => update("notes", e.target.value)} style={S.input} placeholder="Any additional notes..." />
       </div>

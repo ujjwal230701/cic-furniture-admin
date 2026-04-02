@@ -21,7 +21,7 @@ export default function InvoiceForm({ onSave, onCancel, initial }) {
   const [invoice, setInvoice] = useState(initial || {
     invoice_number: "", customer_name: "", customer_address: "",
     customer_gstin: "", customer_phone: "", place_of_supply: "Chandigarh",
-    due_date: today(), payment_status: "unpaid", notes: "", status: "active",
+    due_date: today(), payment_status: "unpaid", notes: "", dispatch_details: "", status: "active",
   });
   const [items, setItems] = useState(initial?.items || [emptyItem()]);
 

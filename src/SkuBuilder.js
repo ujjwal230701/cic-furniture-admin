@@ -8,7 +8,7 @@ import { S } from "./styles";
 //   onChange    — called with new sku string
 //   isEdit      — true when editing an existing product
 //   initialSku  — the sku the product had when the form opened (for change warning)
-export default function SkuBuilder({ value, onChange, isEdit, initialSku }) {
+export default function SkuBuilder({ value, onChange, isEdit, initialSku, onPickExisting }) {
   const [skuRef, setSkuRef] = useState([]);
   const [refLoading, setRefLoading] = useState(true);
 
@@ -18,6 +18,8 @@ export default function SkuBuilder({ value, onChange, isEdit, initialSku }) {
 
   const [generatedSku, setGeneratedSku] = useState("");
   const [genLoading, setGenLoading] = useState(false);
+  const [existingSkus, setExistingSkus] = useState([]);
+  const [pickedSku, setPickedSku] = useState("__new__");
 
   // override = user wants to type a custom SKU
   const [override, setOverride] = useState(false);
@@ -75,18 +77,24 @@ export default function SkuBuilder({ value, onChange, isEdit, initialSku }) {
     setGenLoading(true);
     const { data } = await supabase
       .from("products")
-      .select("sku")
+      .select("sku, name")
       .like("sku", `${prefix}-%`);
 
     let max = 0;
+    const existing = [];
+    const seen = new Set();
     (data || []).forEach(p => {
       const tail = (p.sku || "").slice(prefix.length + 1);
       const num  = parseInt(tail, 10);
       if (!isNaN(num) && num > max) max = num;
+      if (p.sku && !seen.has(p.sku)) { seen.add(p.sku); existing.push({ sku: p.sku, name: p.name }); }
     });
+    existing.sort((a, b) => a.sku.localeCompare(b.sku));
 
     const next = String(max + 1).padStart(3, "0");
     const sku  = `${prefix}-${next}`;
+    setExistingSkus(existing);
+    setPickedSku("__new__");
     setGeneratedSku(sku);
     onChange(sku);
     setGenLoading(false);
@@ -104,6 +112,8 @@ export default function SkuBuilder({ value, onChange, isEdit, initialSku }) {
     setTypeCode("");
     setSubtypeCode("");
     setGeneratedSku("");
+    setExistingSkus([]);
+    setPickedSku("__new__");
     onChange("");
   };
 
@@ -111,12 +121,32 @@ export default function SkuBuilder({ value, onChange, isEdit, initialSku }) {
     setTypeCode(code);
     setSubtypeCode("");
     setGeneratedSku("");
+    setExistingSkus([]);
+    setPickedSku("__new__");
     onChange("");
   };
 
   const handleSubtypeChange = (code) => {
     setSubtypeCode(code);
     generateSku(catCode, typeCode, code);
+  };
+
+  const handleSkuPick = async (val) => {
+    setPickedSku(val);
+    if (val === "__new__") {
+      onChange(generatedSku);
+      return;
+    }
+    onChange(val);
+    if (onPickExisting) {
+      const { data } = await supabase
+        .from("products")
+        .select("name, price, description, category, cost_price, floor_price, image_url, in_stock")
+        .eq("sku", val)
+        .limit(1)
+        .single();
+      if (data) onPickExisting(data);
+    }
   };
 
   const enableOverride = () => {
@@ -191,11 +221,27 @@ export default function SkuBuilder({ value, onChange, isEdit, initialSku }) {
         </div>
       )}
 
+      {/* Existing SKU picker — shown once subtype is selected and existing SKUs exist */}
+      {!override && subtypeCode && existingSkus.length > 0 && (
+        <div style={{ marginBottom: 8 }}>
+          <select
+            value={pickedSku}
+            onChange={e => handleSkuPick(e.target.value)}
+            style={{ ...S.input, width: "100%", fontFamily: "monospace" }}
+          >
+            <option value="__new__">✦ New — {generatedSku}</option>
+            {existingSkus.map(e => (
+              <option key={e.sku} value={e.sku}>{e.sku} — {e.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Generated / manual SKU field */}
       <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
         <input
           type="text"
-          value={override ? (value || "") : (genLoading ? "Generating…" : (generatedSku || ""))}
+          value={override ? (value || "") : (genLoading ? "Generating…" : (pickedSku === "__new__" ? generatedSku : pickedSku) || "")}
           onChange={override ? e => onChange(e.target.value) : undefined}
           readOnly={!override}
           placeholder={override ? "Type custom SKU" : "Select all three above to generate"}

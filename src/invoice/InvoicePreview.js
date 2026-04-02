@@ -52,6 +52,10 @@ export default function InvoicePreview({ invoice, items }) {
             <span style={IS.metaLabel}>Invoice Date :</span>
             <span style={{ fontWeight: 500 }}>{formatDate(invoice.created_at || new Date())}</span>
           </div>
+          <div style={IS.metaRow}>
+            <span style={IS.metaLabel}>Dispatch Details :</span>
+            <span style={{ fontWeight: 500 }}>{invoice.dispatch_details || ""}</span>
+          </div>
         </div>
       </div>
 

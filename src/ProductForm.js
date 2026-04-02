@@ -15,7 +15,13 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
     initial?.image_url ? [{ url: initial.image_url, sort_order: 0 }] : []
   );
   const [uploading, setUploading] = useState(false);
+  const [allProducts, setAllProducts] = useState([]);
   const fileRef = useRef();
+
+  useEffect(() => {
+    supabase.from("products").select("id, name, sku, price, description, category, cost_price, floor_price, image_url, in_stock").order("name")
+      .then(({ data }) => setAllProducts(data || []));
+  }, []);
 
   useEffect(() => {
     if (!initial?.id) return;
@@ -80,6 +86,38 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
           {initial ? "EDIT PRODUCT" : "ADD NEW PRODUCT"}
         </div>
 
+        {!initial && allProducts.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <label style={S.label}>COPY FROM EXISTING PRODUCT</label>
+            <select
+              defaultValue=""
+              onChange={e => {
+                const p = allProducts.find(x => x.id === +e.target.value);
+                if (!p) return;
+                setForm(f => ({
+                  ...f,
+                  name: p.name,
+                  price: p.price,
+                  description: p.description || "",
+                  category: p.category,
+                  cost_price: p.cost_price ?? "",
+                  floor_price: p.floor_price ?? "",
+                  image_url: p.image_url || "",
+                  in_stock: p.in_stock,
+                  sku: p.sku || "",
+                }));
+                if (p.image_url) setImages([{ url: p.image_url, sort_order: 0 }]);
+              }}
+              style={S.input}
+            >
+              <option value="">— Select a product to copy from —</option>
+              {allProducts.map(p => (
+                <option key={p.id} value={p.id}>{p.name}{p.sku ? ` (${p.sku})` : ""}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Image Upload */}
         <div style={{ marginBottom: 20 }}>
           <label style={S.label}>PRODUCT IMAGES ({images.length}/5)</label>
@@ -116,6 +154,17 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
           onChange={val => setForm(f => ({ ...f, sku: val }))}
           isEdit={!!initial}
           initialSku={initial?.sku || ""}
+          onPickExisting={product => setForm(f => ({
+            ...f,
+            name: product.name,
+            price: product.price,
+            description: product.description || "",
+            category: product.category,
+            cost_price: product.cost_price ?? "",
+            floor_price: product.floor_price ?? "",
+            image_url: product.image_url || "",
+            in_stock: product.in_stock,
+          }))}
         />
 
         {/* Price & Stock */}
