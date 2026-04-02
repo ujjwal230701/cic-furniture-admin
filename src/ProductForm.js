@@ -4,6 +4,12 @@ import { CATEGORIES } from "./config";
 import { S } from "./styles";
 import SkuBuilder from "./SkuBuilder";
 
+const incrementSku = (sku) => {
+  const match = sku.match(/^(.*-)(\d+)$/);
+  if (!match) return sku;
+  return match[1] + String(parseInt(match[2], 10) + 1).padStart(match[2].length, "0");
+};
+
 const emptyVariant = () => ({
   id: null,
   variant_value: "",
@@ -281,8 +287,11 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
                         {sharedSku && (
                           <button
                             type="button"
-                            onClick={() => setVariantField(i, "sku", sharedSku)}
-                            title="Apply generated SKU to this variant"
+                            onClick={() => {
+                              setVariantField(i, "sku", sharedSku);
+                              setSharedSku(prev => incrementSku(prev));
+                            }}
+                            title="Apply generated SKU to this variant and auto-increment for the next"
                             style={{ ...S.btnOutline, padding: "8px 10px", fontSize: 10, whiteSpace: "nowrap" }}
                           >
                             ← APPLY
