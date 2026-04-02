@@ -43,7 +43,7 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${Date.now()}.${ext}`;
+      const path = `public/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
       if (error) { alert(`Upload error: ${error.message}`); setUploading(false); return; }
       const { data } = supabase.storage.from("product-images").getPublicUrl(path);
