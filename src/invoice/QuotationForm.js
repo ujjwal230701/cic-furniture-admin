@@ -23,13 +23,14 @@ export const emptyItem = () => ({
 
 export default function QuotationForm({ onSave, onCancel, initial }) {
   const [products, setProducts] = useState([]);
+  const { items: initialItems, ...initialQuotation } = initial || {};
   const [gstInclusive, setGstInclusive] = useState(initial?.gst_inclusive || false);
-  const [quotation, setQuotation] = useState(initial || {
+  const [quotation, setQuotation] = useState(initial ? initialQuotation : {
     quotation_number: "", customer_name: "", customer_address: "",
     customer_gstin: "", customer_phone: "", place_of_supply: "Chandigarh",
     valid_till: thirtyDaysLater(), quo_status: "draft", notes: "",
   });
-  const [items, setItems] = useState(initial?.items || [emptyItem()]);
+  const [items, setItems] = useState(initialItems || [emptyItem()]);
 
   useEffect(() => {
     supabase.from("products").select("id, name, price, sku, parent_product_id, variant_type, variant_value").order("name")
