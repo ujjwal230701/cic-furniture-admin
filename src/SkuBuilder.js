@@ -126,9 +126,33 @@ export default function SkuBuilder({ value, onChange, isEdit, initialSku, onPick
     onChange("");
   };
 
-  const handleSubtypeChange = (code) => {
-    setSubtypeCode(code);
-    generateSku(catCode, typeCode, code);
+  const handleSubtypeChange = async (code) => {
+    if (!code) return;
+    const upperCode = code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!upperCode) return;
+
+    // If the typed value doesn't exist in sku_reference, auto-insert it
+    const exists = skuRef.some(
+      r => r.category_code === catCode && r.product_type_code === typeCode && r.subtype_code === upperCode
+    );
+    if (!exists) {
+      const { error } = await supabase.from("sku_reference").insert([{
+        category_code: catCode,
+        category_name: skuRef.find(r => r.category_code === catCode)?.category_name || catCode,
+        product_type_code: typeCode,
+        product_type_name: skuRef.find(r => r.product_type_code === typeCode)?.product_type_name || typeCode,
+        subtype_code: upperCode,
+        subtype_name: upperCode,
+      }]);
+      if (!error) {
+        // Refresh local sku_reference so the new entry appears
+        const { data } = await supabase.from("sku_reference").select("*").order("category_code").order("product_type_code").order("subtype_code");
+        setSkuRef(data || []);
+      }
+    }
+
+    setSubtypeCode(upperCode);
+    generateSku(catCode, typeCode, upperCode);
   };
 
   const handleSkuPick = async (val) => {
@@ -205,19 +229,26 @@ export default function SkuBuilder({ value, onChange, isEdit, initialSku, onPick
             ))}
           </select>
 
-          <select
-            value={subtypeCode}
-            onChange={e => handleSubtypeChange(e.target.value)}
-            style={{ ...S.input, flex: "1 1 150px" }}
-            disabled={!typeCode}
-          >
-            <option value="">— Sub-type —</option>
-            {subtypes.map(r => (
-              <option key={r.subtype_code} value={r.subtype_code}>
-                {r.subtype_code} · {r.subtype_name}
-              </option>
-            ))}
-          </select>
+          <div style={{ flex: "1 1 150px", display: "flex", flexDirection: "column", gap: 4 }}>
+            <input
+              list="subtype-options"
+              value={subtypeCode}
+              onChange={e => setSubtypeCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+              onBlur={e => handleSubtypeChange(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { e.target.blur(); } }}
+              placeholder="— Sub-type —"
+              disabled={!typeCode}
+              style={{ ...S.input, fontFamily: "monospace" }}
+            />
+            <datalist id="subtype-options">
+              {subtypes.map(r => (
+                <option key={r.subtype_code} value={r.subtype_code}>{r.subtype_code} · {r.subtype_name}</option>
+              ))}
+            </datalist>
+            {typeCode && (
+              <div style={{ fontSize: 10, color: "#888" }}>Select existing or type new (e.g. 4X2)</div>
+            )}
+          </div>
         </div>
       )}
 

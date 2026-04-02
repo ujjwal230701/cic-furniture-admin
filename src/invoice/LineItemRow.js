@@ -11,18 +11,53 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
 
   const finalRate = item.catalogue_price * (1 - (item.discount_pct || 0) / 100);
 
+  // Identify parent products (products that have variants in the products list)
+  const parentIds = new Set(products.filter(p => p.parent_product_id).map(p => p.parent_product_id));
+
   const filteredProducts = products.filter(p =>
+    // Show standalone products and parent products in search; hide raw variant children
+    !p.parent_product_id &&
     p.name.toLowerCase().includes((item.product_name || "").toLowerCase())
   );
 
+  // Variants of the currently selected parent (if any)
+  const selectedParentId = item._pending_parent_id || null;
+  const variantsForParent = selectedParentId
+    ? products.filter(p => p.parent_product_id === selectedParentId)
+    : [];
+
   const selectProduct = (product) => {
-    onChange(index, "product_name", product.name);
-    onChange(index, "catalogue_price", product.price);
-    onChange(index, "unit_price", product.price);
-    onChange(index, "hsn_sac", product.sku || "");
-    onChange(index, "product_id", product.id);
-    onChange(index, "discount_pct", 0);
+    if (parentIds.has(product.id)) {
+      // Parent selected — set pending parent, clear product_id until variant chosen
+      onChange(index, "_pending_parent_id", product.id);
+      onChange(index, "_pending_parent_name", product.name);
+      onChange(index, "product_name", product.name);
+      onChange(index, "product_id", null);
+      onChange(index, "catalogue_price", 0);
+      onChange(index, "hsn_sac", "");
+    } else {
+      // Standalone product — select directly
+      onChange(index, "product_name", product.name);
+      onChange(index, "catalogue_price", product.price);
+      onChange(index, "unit_price", product.price);
+      onChange(index, "hsn_sac", product.sku || "");
+      onChange(index, "product_id", product.id);
+      onChange(index, "discount_pct", 0);
+      onChange(index, "_pending_parent_id", null);
+      onChange(index, "_pending_parent_name", null);
+    }
     setShowDropdown(false);
+  };
+
+  const selectVariant = (variant) => {
+    onChange(index, "product_name", `${item._pending_parent_name || variant.name} — ${variant.variant_value}`);
+    onChange(index, "catalogue_price", variant.price);
+    onChange(index, "unit_price", variant.price);
+    onChange(index, "hsn_sac", variant.sku || "");
+    onChange(index, "product_id", variant.id);
+    onChange(index, "discount_pct", 0);
+    onChange(index, "_pending_parent_id", null);
+    onChange(index, "_pending_parent_name", null);
   };
 
   const handleFinalRateChange = (value) => {
@@ -49,45 +84,68 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
       <td style={{ padding: "8px 6px", fontSize: 12 }}>{index + 1}</td>
 
       {/* Item name with custom dropdown */}
-<td style={{ padding: "8px 6px", minWidth: 180 }}>
-  
-  <div style={{ position: "relative" }}>
-    <input
-      value={item.product_name}
-      onChange={e => { onChange(index, "product_name", e.target.value); setShowDropdown(true); }}
-      onFocus={() => setShowDropdown(true)}
-      onBlur={() => setTimeout(() => setShowDropdown(false), 300)}
-      placeholder="Type to search..."
-      style={{ ...inputStyle, marginBottom: 4 }}
-    />
-    {showDropdown && filteredProducts.length > 0 && (
-      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #ddd", zIndex: 1000, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-        {filteredProducts.map(p => (
-          <div key={p.id} onMouseDown={() => selectProduct(p)} onTouchStart={() => selectProduct(p)}
-            style={{ padding: "10px 12px", cursor: "pointer", fontSize: 13, borderBottom: "1px solid #f0f0f0" }}
-            onMouseEnter={e => e.currentTarget.style.background = "#f5f5f0"}
-            onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
-            <div style={{ fontWeight: 600 }}>{p.name}</div>
-            <div style={{ fontSize: 11, color: "#888" }}>₹{fmt(p.price)}</div>
+      <td style={{ padding: "8px 6px", minWidth: 180 }}>
+        <div style={{ position: "relative" }}>
+          <input
+            value={item.product_name}
+            onChange={e => { onChange(index, "product_name", e.target.value); onChange(index, "_pending_parent_id", null); setShowDropdown(true); }}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 300)}
+            placeholder="Type to search..."
+            style={{ ...inputStyle, marginBottom: 4 }}
+          />
+          {showDropdown && filteredProducts.length > 0 && (
+            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid #ddd", zIndex: 1000, maxHeight: 180, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+              {filteredProducts.map(p => (
+                <div key={p.id} onMouseDown={() => selectProduct(p)} onTouchStart={() => selectProduct(p)}
+                  style={{ padding: "10px 12px", cursor: "pointer", fontSize: 13, borderBottom: "1px solid #f0f0f0" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#f5f5f0"}
+                  onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                  <div style={{ fontWeight: 600 }}>{p.name}</div>
+                  <div style={{ fontSize: 11, color: "#888" }}>
+                    {parentIds.has(p.id)
+                      ? <span style={{ color: "#805ad5" }}>▾ Has variants — select below</span>
+                      : `₹${fmt(p.price)}`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Variant picker — shown when a parent product is selected */}
+        {selectedParentId && variantsForParent.length > 0 && (
+          <div style={{ marginTop: 4 }}>
+            <select
+              defaultValue=""
+              onChange={e => {
+                const v = variantsForParent.find(v => v.id === +e.target.value);
+                if (v) selectVariant(v);
+              }}
+              style={{ ...inputStyle, fontSize: 12, color: "#555" }}
+            >
+              <option value="">— Select variant —</option>
+              {variantsForParent.map(v => (
+                <option key={v.id} value={v.id}>
+                  {v.variant_value} · ₹{fmt(v.price)} · Stock: {v.stock}
+                </option>
+              ))}
+            </select>
           </div>
-        ))}
-      </div>
-    )}
-  </div>
+        )}
 
-  <input value={item.description} onChange={e => onChange(index, "description", e.target.value)}
-    placeholder="Description..." style={{ ...inputStyle, fontSize: 11, color: "#666" }} />
+        <input value={item.description} onChange={e => onChange(index, "description", e.target.value)}
+          placeholder="Description..." style={{ ...inputStyle, fontSize: 11, color: "#666", marginTop: 4 }} />
 
-  {isManual && (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-      <span style={{ fontSize: 10, color: "#d97706" }}>⚠️ Not in catalogue</span>
-      <button onMouseDown={addToCatalogue} style={{ fontSize: 9, padding: "2px 6px", background: "#1a1a1a", color: "#fff", border: "none", cursor: "pointer" }}>
-        + ADD TO CATALOGUE
-      </button>
-    </div>
-  )}
-</td>
-
+        {isManual && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <span style={{ fontSize: 10, color: "#d97706" }}>⚠️ Not in catalogue</span>
+            <button onMouseDown={addToCatalogue} style={{ fontSize: 9, padding: "2px 6px", background: "#1a1a1a", color: "#fff", border: "none", cursor: "pointer" }}>
+              + ADD TO CATALOGUE
+            </button>
+          </div>
+        )}
+      </td>
 
       {/* HSN */}
       <td style={{ padding: "8px 4px", width: 80 }}>
@@ -104,7 +162,7 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
         <input type="number" value={item.catalogue_price} onChange={e => onChange(index, "catalogue_price", +e.target.value)} style={{ ...inputStyle, textAlign: "right" }} />
       </td>
 
-      {/* Discount % — auto calculated */}
+      {/* Discount % */}
       <td style={{ padding: "8px 4px", width: 70 }}>
         <input type="number" value={item.discount_pct} onChange={e => onChange(index, "discount_pct", +e.target.value)} style={{ ...inputStyle, textAlign: "right" }} />
         {item.discount_pct > 0 && (
@@ -114,7 +172,7 @@ export default function LineItemRow({ item, index, products, gstInclusive, onCha
         )}
       </td>
 
-      {/* Final rate — editable, back-calculates discount */}
+      {/* Final rate */}
       <td style={{ padding: "8px 4px", width: 90 }}>
         <input
           type="number"

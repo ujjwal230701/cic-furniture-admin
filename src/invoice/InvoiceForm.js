@@ -13,6 +13,7 @@ const today = () => new Date().toISOString().split("T")[0];
 export const emptyItem = () => ({
   product_id: null, product_name: "", description: "", hsn_sac: "",
   quantity: 1, catalogue_price: 0, unit_price: 0, discount_pct: 0, gst_rate: DEFAULT_GST_RATE,
+  _pending_parent_id: null, _pending_parent_name: null,
 });
 
 export default function InvoiceForm({ onSave, onCancel, initial }) {
@@ -26,7 +27,7 @@ export default function InvoiceForm({ onSave, onCancel, initial }) {
   const [items, setItems] = useState(initial?.items || [emptyItem()]);
 
   useEffect(() => {
-    supabase.from("products").select("id, name, price, sku").order("name")
+    supabase.from("products").select("id, name, price, sku, parent_product_id, variant_type, variant_value").order("name")
       .then(({ data }) => setProducts(data || []));
     if (!initial) {
       supabase.from("invoices").select("invoice_number").order("id", { ascending: false }).limit(1)

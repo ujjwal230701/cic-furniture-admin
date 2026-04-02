@@ -15,7 +15,10 @@ export default function DashboardTab({ role }) {
 
   const totalValue = products.reduce((s, p) => s + (p.price * p.stock), 0);
   const totalRevenue = products.reduce((s, p) => s + (p.price * (p.sold || 0)), 0);
-  const lowStock = products.filter(p => p.stock <= 5);
+  // Only include products with a threshold set; ignore standalone variants (they have parent_product_id)
+  const lowStock = products.filter(p =>
+    p.min_stock_threshold != null && p.stock <= p.min_stock_threshold && !p.parent_product_id
+  );
 
   // Owner-only margin calculations — only include products with cost_price set
   const costProducts = products.filter(p => p.cost_price != null && p.cost_price > 0);
@@ -40,7 +43,7 @@ export default function DashboardTab({ role }) {
           {lowStock.map(p => (
             <div key={p.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #fed7d7", fontSize: 13 }}>
               <span>{p.name} <span style={{ color: "#aaa" }}>({p.sku})</span></span>
-              <span style={{ fontWeight: 700, color: "#c53030" }}>{p.stock} left</span>
+              <span style={{ fontWeight: 700, color: "#c53030" }}>{p.stock} left <span style={{ fontWeight: 400, fontSize: 11 }}>(threshold: {p.min_stock_threshold})</span></span>
             </div>
           ))}
         </div>

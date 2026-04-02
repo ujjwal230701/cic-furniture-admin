@@ -3,10 +3,10 @@ import { supabase } from "../supabaseClient";
 async function updateProductStock(productId, qtyChange) {
   const { data } = await supabase.from("products").select("stock, sold").eq("id", productId).single();
   if (!data) return;
-  await supabase.from("products").update({
-    stock: Math.max(0, data.stock + qtyChange),
-    sold: Math.max(0, (data.sold || 0) - qtyChange),
-  }).eq("id", productId);
+  const update = { stock: Math.max(0, data.stock + qtyChange) };
+  // sold only increments on invoice deductions (sales). Stock-in / restore never changes sold.
+  if (qtyChange < 0) update.sold = (data.sold || 0) + Math.abs(qtyChange);
+  await supabase.from("products").update(update).eq("id", productId);
 }
 
 async function logMovements(items, type, invoiceId) {
