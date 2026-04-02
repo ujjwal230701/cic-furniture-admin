@@ -84,6 +84,11 @@ export default function QuotationForm({ onSave, onCancel, initial }) {
         <div>
           <label style={S.label}>VALID TILL</label>
           <input type="date" value={quotation.valid_till} onChange={e => update("valid_till", e.target.value)} style={S.input} />
+          {quotation.valid_till && (
+            <div style={{ fontSize: 10, color: "#888", marginTop: 4 }}>
+              {(() => { const [y,m,d] = quotation.valid_till.split("-"); return `${d}/${m}/${y}`; })()}
+            </div>
+          )}
         </div>
         <div>
           <label style={S.label}>STATUS</label>
