@@ -13,6 +13,7 @@ const incrementSku = (sku) => {
 const emptyVariant = () => ({
   id: null,
   variant_value: "",
+  variant_color: "",
   sku: "",
   price: "",
   cost_price: "",
@@ -65,7 +66,7 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
     // Load variants if this is a parent product
     supabase
       .from("products")
-      .select("id, variant_value, variant_type, sku, price, cost_price, floor_price, stock, image_url")
+      .select("id, variant_value, variant_color, variant_type, sku, price, cost_price, floor_price, stock, image_url")
       .eq("parent_product_id", initial.id)
       .order("id")
       .then(({ data }) => {
@@ -75,6 +76,7 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
           setVariants(data.map(v => ({
             id: v.id,
             variant_value: v.variant_value || "",
+            variant_color: v.variant_color || "",
             sku: v.sku || "",
             price: v.price ?? "",
             cost_price: v.cost_price ?? "",
@@ -292,6 +294,39 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
                         }
                       />
                     </div>
+                    {variantType === "colour" && (
+                      <div>
+                        <label style={S.label}>COLOUR</label>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <input
+                            type="color"
+                            value={v.variant_color || "#cccccc"}
+                            onChange={e => setVariantField(i, "variant_color", e.target.value)}
+                            style={{ width: 40, height: 36, border: "1px solid #ddd", cursor: "pointer", padding: 2, flexShrink: 0 }}
+                          />
+                          <input
+                            type="text"
+                            value={v.variant_color || ""}
+                            onChange={e => {
+                              const val = e.target.value.trim()
+                              const named = CSS.supports("color", val)
+                              if (named) {
+                                const ctx = document.createElement("canvas").getContext("2d")
+                                ctx.fillStyle = val
+                                setVariantField(i, "variant_color", ctx.fillStyle)
+                              } else {
+                                setVariantField(i, "variant_color", val)
+                              }
+                            }}
+                            placeholder='e.g. black or #1a1a1a'
+                            style={{ ...S.input, flex: 1 }}
+                          />
+                          {v.variant_color && (
+                            <button type="button" onClick={() => setVariantField(i, "variant_color", "")} style={{ background: "none", border: "none", color: "#e53e3e", cursor: "pointer", fontSize: 18 }}>✕</button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <label style={S.label}>SKU</label>
                       <div style={{ display: "flex", gap: 6 }}>

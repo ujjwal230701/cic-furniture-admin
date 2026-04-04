@@ -98,6 +98,7 @@ export default function ProductsTab({ role }) {
           sold: v.id ? undefined : 0,
           in_stock: (+v.stock || 0) > 0,
           image_url: v.image_url || null,
+          variant_color: v.variant_color || null,
           featured: false,
         };
         // Remove undefined fields for updates
