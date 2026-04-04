@@ -135,6 +135,13 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
     setForm(f => ({ ...f, image_url: updated.length > 0 ? updated[0].url : "" }));
   };
 
+  const setMainImage = (index) => {
+    if (index === 0) return;
+    const updated = [images[index], ...images.filter((_, i) => i !== index)].map((img, i) => ({ ...img, sort_order: i }));
+    setImages(updated);
+    setForm(f => ({ ...f, image_url: updated[0].url }));
+  };
+
   const setVariantField = (index, field, value) =>
     setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
 
@@ -391,7 +398,10 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
                   {images.map((img, i) => (
                     <div key={i} style={{ position: "relative", width: 80, height: 80 }}>
                       <img src={img.url} alt={`img-${i}`} style={{ width: "100%", height: "100%", objectFit: "cover", border: i === 0 ? "2px solid #1a1a1a" : "1px solid #ddd" }} />
-                      {i === 0 && <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "#1a1a1a", color: "#fff", fontSize: 9, textAlign: "center", padding: 2 }}>MAIN</div>}
+                      {i === 0
+                        ? <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "#1a1a1a", color: "#fff", fontSize: 9, textAlign: "center", padding: 2 }}>MAIN</div>
+                        : <div onClick={() => setMainImage(i)} style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 9, textAlign: "center", padding: 2, cursor: "pointer" }}>SET MAIN</div>
+                      }
                       <button onClick={() => removeImage(i)} style={{ position: "absolute", top: -6, right: -6, background: "#e53e3e", color: "#fff", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                     </div>
                   ))}
