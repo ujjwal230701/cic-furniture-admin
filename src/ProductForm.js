@@ -86,21 +86,31 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
       });
   }, []);
 
-  const uploadImage = async (file) => {
-    if (images.length >= 5) { alert("Maximum 5 images per product"); return; }
+  const uploadImages = async (files) => {
+    const fileArr = Array.from(files);
+    const remaining = 5 - images.length;
+    if (remaining <= 0) { alert("Maximum 5 images per product"); return; }
+    const toUpload = fileArr.slice(0, remaining);
+    if (fileArr.length > remaining) alert(`Only ${remaining} slot(s) remaining. Uploading first ${remaining} image(s).`);
     setUploading(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `public/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
-      if (error) { alert(`Upload error: ${error.message}`); setUploading(false); return; }
-      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-      const newImage = { url: data.publicUrl, sort_order: images.length };
-      setImages(prev => [...prev, newImage]);
-      if (images.length === 0) setForm(f => ({ ...f, image_url: data.publicUrl }));
-    } catch (err) {
-      alert(`Error: ${err.message}`);
+    const uploaded = [];
+    for (const file of toUpload) {
+      try {
+        const ext = file.name.split(".").pop();
+        const path = `public/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error } = await supabase.storage.from("product-images").upload(path, file, { upsert: true });
+        if (error) { alert(`Upload error: ${error.message}`); continue; }
+        const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+        uploaded.push(data.publicUrl);
+      } catch (err) {
+        alert(`Error: ${err.message}`);
+      }
     }
+    setImages(prev => {
+      const next = [...prev, ...uploaded.map((url, i) => ({ url, sort_order: prev.length + i }))];
+      if (prev.length === 0 && next.length > 0) setForm(f => ({ ...f, image_url: next[0].url }));
+      return next;
+    });
     setUploading(false);
   };
 
@@ -389,10 +399,11 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
               )}
               {images.length < 5 && (
                 <div style={{ border: "1px dashed #ddd", padding: 20, textAlign: "center", cursor: "pointer" }} onClick={() => !uploading && fileRef.current.click()}>
-                  <div style={{ color: "#aaa", fontSize: 13 }}>{uploading ? "Uploading..." : "Tap to add image"}</div>
+                  <div style={{ color: "#aaa", fontSize: 13 }}>{uploading ? "Uploading..." : "Tap to add images"}</div>
+                  {!uploading && <div style={{ color: "#bbb", fontSize: 11, marginTop: 4 }}>You can select multiple at once</div>}
                 </div>
               )}
-              <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => e.target.files[0] && uploadImage(e.target.files[0])} />
+              <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => e.target.files.length > 0 && uploadImages(e.target.files)} />
             </div>
 
             {/* SKU Builder */}
