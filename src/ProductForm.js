@@ -26,7 +26,7 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
   const isOwner = role === "owner";
   const [form, setForm] = useState(initial || {
     name: "", category: CATEGORIES[0], price: "", description: "",
-    sku: "", stock: 0, sold: 0, in_stock: true, featured: false, image_url: "",
+    sku: "", stock: 0, sold: 0, in_stock: true, featured: false, custom_colours: false, image_url: "",
     cost_price: "", floor_price: "",
   });
   const [images, setImages] = useState(
@@ -252,10 +252,14 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
               <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} style={{ ...S.input, resize: "vertical" }} />
             </div>
 
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 20, display: "flex", gap: 20, flexWrap: "wrap" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
                 <input type="checkbox" checked={form.featured} onChange={e => setForm({ ...form, featured: e.target.checked })} />
                 Show on Homepage
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                <input type="checkbox" checked={form.custom_colours || false} onChange={e => setForm({ ...form, custom_colours: e.target.checked })} />
+                Available in Custom Colours
               </label>
             </div>
 
@@ -523,10 +527,14 @@ export default function ProductForm({ initial, onSave, onCancel, role }) {
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 20, marginBottom: 24 }}>
+            <div style={{ display: "flex", gap: 20, marginBottom: 24, flexWrap: "wrap" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
                 <input type="checkbox" checked={form.featured} onChange={e => setForm({ ...form, featured: e.target.checked })} />
                 Show on Homepage
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                <input type="checkbox" checked={form.custom_colours || false} onChange={e => setForm({ ...form, custom_colours: e.target.checked })} />
+                Available in Custom Colours
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
                 <input type="checkbox" checked={form.in_stock} onChange={e => setForm({ ...form, in_stock: e.target.checked })} />

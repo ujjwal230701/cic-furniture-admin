@@ -5,6 +5,7 @@ import { IS } from "./invoiceStyles";
 export default function QuotationPreview({ quotation, items }) {
   const gstType = getGSTType(quotation.place_of_supply);
   const gstInclusive = quotation.gst_inclusive || false;
+  const gstSeparate = quotation.gst_separate || false;
   const isIntra = gstType === "intra";
 
   return (
@@ -66,20 +67,21 @@ export default function QuotationPreview({ quotation, items }) {
         <thead>
           <tr>
             <th style={{ ...IS.th, width: "4%" }}>#</th>
-            <th style={{ ...IS.th, width: "30%" }}>Item & Description</th>
+            <th style={{ ...IS.th, width: gstSeparate ? "38%" : "30%" }}>Item & Description</th>
             <th style={{ ...IS.th, width: "8%" }}>HSN/SAC</th>
             <th style={{ ...IS.thRight, width: "6%" }}>Qty</th>
             <th style={{ ...IS.thRight, width: "10%" }}>Rate</th>
             <th style={{ ...IS.thRight, width: "12%" }}>Final Rate</th>
-            <th style={{ ...IS.thRight, width: "12%" }}>Taxable Value</th>
-            <th style={{ ...IS.thRight, width: "10%" }}>GST</th>
-            <th style={{ ...IS.thRight, width: "12%" }}>Amount</th>
+            {!gstSeparate && <th style={{ ...IS.thRight, width: "12%" }}>Taxable Value</th>}
+            {!gstSeparate && <th style={{ ...IS.thRight, width: "10%" }}>GST</th>}
+            <th style={{ ...IS.thRight, width: "12%" }}>{gstSeparate ? "Amount (Excl. GST)" : "Amount"}</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item, i) => {
             const { basePrice, gstAmt, lineTotal, priceAfterDiscount } = calcItemTotal(item, gstInclusive);
             const taxableValue = basePrice * item.quantity;
+            const separateLineTotal = basePrice * item.quantity;
             return (
               <tr key={i}>
                 <td style={IS.td}>{i + 1}</td>
@@ -94,9 +96,9 @@ export default function QuotationPreview({ quotation, items }) {
                   {fmt(priceAfterDiscount || basePrice)}
                   {item.discount_pct > 0 && <><br /><span style={{ fontSize: 11, color: "#38a169" }}>{item.discount_pct}% off</span></>}
                 </td>
-                <td style={IS.tdRight}>{fmt(taxableValue)}</td>
-                <td style={IS.tdRight}>{fmt(gstAmt * item.quantity)}<br /><span style={{ fontSize: 11, color: "#888" }}>{item.gst_rate}%</span></td>
-                <td style={IS.tdRight}>{fmt(lineTotal)}</td>
+                {!gstSeparate && <td style={IS.tdRight}>{fmt(taxableValue)}</td>}
+                {!gstSeparate && <td style={IS.tdRight}>{fmt(gstAmt * item.quantity)}<br /><span style={{ fontSize: 11, color: "#888" }}>{item.gst_rate}%</span></td>}
+                <td style={IS.tdRight}>{fmt(gstSeparate ? separateLineTotal : lineTotal)}</td>
               </tr>
             );
           })}
@@ -107,22 +109,41 @@ export default function QuotationPreview({ quotation, items }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: 16 }}>
         <div style={{ fontSize: 12, color: "#555" }}>Items in Total: {items.length}</div>
         <div style={{ width: "38%" }}>
-          {[
-            ["Sub Total", fmt(quotation.subtotal)],
-            isIntra ? [`CGST (${items[0]?.gst_rate / 2 || 9}%)`, fmt(quotation.cgst)] : null,
-            isIntra ? [`SGST (${items[0]?.gst_rate / 2 || 9}%)`, fmt(quotation.sgst)] : null,
-            !isIntra ? [`IGST (${items[0]?.gst_rate || 18}%)`, fmt(quotation.igst)] : null,
-          ].filter(Boolean).map(([label, value]) => (
-            <div key={label} style={IS.totalsRow}>
-              <span style={IS.totalsLabel}>{label}</span>
-              <span style={IS.totalsValue}>{value}</span>
-            </div>
-          ))}
-          <div style={IS.grandTotal}>
-            <span style={{ fontWeight: 700 }}>Total (Estimated)</span>
-            <span style={{ fontWeight: 800 }}>₹{fmt(quotation.total)}</span>
-          </div>
-          <div style={IS.totalInWords}>{totalInWords(quotation.total)}</div>
+          {gstSeparate ? (
+            <>
+              <div style={IS.totalsRow}>
+                <span style={IS.totalsLabel}>Sub Total</span>
+                <span style={IS.totalsValue}>{fmt(quotation.subtotal)}</span>
+              </div>
+              <div style={IS.grandTotal}>
+                <span style={{ fontWeight: 700 }}>Total (Excl. GST)</span>
+                <span style={{ fontWeight: 800 }}>₹{fmt(quotation.subtotal)}</span>
+              </div>
+              <div style={IS.totalInWords}>{totalInWords(quotation.subtotal)}</div>
+              <div style={{ marginTop: 10, padding: "8px 10px", background: "#fffbeb", border: "1px solid #f6ad55", fontSize: 11, color: "#92400e", fontWeight: 600 }}>
+                * GST will be charged separately as per applicable rates at the time of invoice.
+              </div>
+            </>
+          ) : (
+            <>
+              {[
+                ["Sub Total", fmt(quotation.subtotal)],
+                isIntra ? [`CGST (${items[0]?.gst_rate / 2 || 9}%)`, fmt(quotation.cgst)] : null,
+                isIntra ? [`SGST (${items[0]?.gst_rate / 2 || 9}%)`, fmt(quotation.sgst)] : null,
+                !isIntra ? [`IGST (${items[0]?.gst_rate || 18}%)`, fmt(quotation.igst)] : null,
+              ].filter(Boolean).map(([label, value]) => (
+                <div key={label} style={IS.totalsRow}>
+                  <span style={IS.totalsLabel}>{label}</span>
+                  <span style={IS.totalsValue}>{value}</span>
+                </div>
+              ))}
+              <div style={IS.grandTotal}>
+                <span style={{ fontWeight: 700 }}>Total (Estimated)</span>
+                <span style={{ fontWeight: 800 }}>₹{fmt(quotation.total)}</span>
+              </div>
+              <div style={IS.totalInWords}>{totalInWords(quotation.total)}</div>
+            </>
+          )}
         </div>
       </div>
 
@@ -132,6 +153,7 @@ export default function QuotationPreview({ quotation, items }) {
       <div style={IS.sectionTitle}>Terms & Conditions</div>
       <div style={IS.terms}>
         {TERMS.map((t, i) => <div key={i}>{t}</div>)}
+        {gstSeparate && <div>Prices quoted are exclusive of GST. GST will be charged separately as applicable.</div>}
         {quotation.valid_till && <div>This quotation is valid till {formatDate(quotation.valid_till)}.</div>}
       </div>
 

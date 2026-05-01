@@ -134,6 +134,14 @@ export default function ProductsTab({ role }) {
     fetchProducts();
   };
 
+  const toggleLive = async (p, e) => {
+    e.stopPropagation();
+    const { error } = await supabase.from("products").update({ is_live: !p.is_live }).eq("id", p.id);
+    if (error) { showToast(`Error: ${error.message}`, "error"); return; }
+    showToast(p.is_live ? `${p.name} hidden from site` : `${p.name} is now live!`);
+    fetchProducts();
+  };
+
   // Identify parent product IDs (products that have at least one variant child)
   const parentIds = new Set(products.filter(p => p.parent_product_id).map(p => p.parent_product_id));
 
@@ -200,6 +208,21 @@ export default function ProductsTab({ role }) {
           </div>
 
           <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap" }}>
+          {isOwner && (
+    <button
+      onClick={(e) => toggleLive(p, e)}
+      style={{
+        ...S.btnOutline,
+        padding: "6px 12px",
+        fontSize: 11,
+        background: p.is_live ? "#38a169" : "#fff",
+        color: p.is_live ? "#fff" : "#aaa",
+        borderColor: p.is_live ? "#38a169" : "#ddd",
+      }}
+    >
+      {p.is_live ? "✓ LIVE" : "LIVE"}
+    </button>
+  )}
             {isParent && (
               <button
                 onClick={() => toggleExpand(p.id)}
@@ -253,6 +276,21 @@ export default function ProductsTab({ role }) {
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                {isOwner && (
+    <button
+      onClick={(e) => toggleLive(v, e)}
+      style={{
+        ...S.btnOutline,
+        padding: "4px 10px",
+        fontSize: 10,
+        background: v.is_live ? "#38a169" : "#fff",
+        color: v.is_live ? "#fff" : "#aaa",
+        borderColor: v.is_live ? "#38a169" : "#ddd",
+      }}
+    >
+      {v.is_live ? "✓ LIVE" : "LIVE"}
+    </button>
+  )}
                   <button onClick={() => setLabelProduct(v)} style={{ ...S.btnOutline, padding: "4px 10px", fontSize: 10 }}>LABEL</button>
                   {isOwner && (
                     <>

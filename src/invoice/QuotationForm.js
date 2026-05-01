@@ -25,6 +25,7 @@ export default function QuotationForm({ onSave, onCancel, initial }) {
   const [products, setProducts] = useState([]);
   const { items: initialItems, ...initialQuotation } = initial || {};
   const [gstInclusive, setGstInclusive] = useState(initial?.gst_inclusive || false);
+  const [gstSeparate, setGstSeparate] = useState(initial?.gst_separate || false);
   const [quotation, setQuotation] = useState(initial ? initialQuotation : {
     quotation_number: "", customer_name: "", customer_address: "",
     customer_gstin: "", customer_phone: "", place_of_supply: "Chandigarh",
@@ -64,7 +65,7 @@ export default function QuotationForm({ onSave, onCancel, initial }) {
 
   const save = () => {
     if (!quotation.customer_name || items.length === 0) return;
-    onSave({ ...quotation, ...totals, gst_type: gstType, gst_inclusive: gstInclusive }, items);
+    onSave({ ...quotation, ...totals, gst_type: gstType, gst_inclusive: gstInclusive, gst_separate: gstSeparate }, items);
   };
 
   return (
@@ -107,6 +108,18 @@ export default function QuotationForm({ onSave, onCancel, initial }) {
       </div>
 
       <GSTToggle gstInclusive={gstInclusive} setGstInclusive={setGstInclusive} gstType={gstType} />
+      <div
+        onClick={() => setGstSeparate(v => !v)}
+        style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", marginBottom: 24, cursor: "pointer", background: gstSeparate ? "#fffbeb" : "#fafafa", border: `1px solid ${gstSeparate ? "#f6ad55" : "#e8e8e8"}` }}
+      >
+        <div style={{ width: 16, height: 16, border: `2px solid ${gstSeparate ? "#d97706" : "#bbb"}`, background: gstSeparate ? "#d97706" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          {gstSeparate && <span style={{ color: "#fff", fontSize: 11, fontWeight: 900, lineHeight: 1 }}>✓</span>}
+        </div>
+        <div>
+          <span style={{ fontSize: 12, fontWeight: 700, color: gstSeparate ? "#92400e" : "#555" }}>QUOTE WITHOUT GST</span>
+          <span style={{ fontSize: 11, color: "#888", marginLeft: 10 }}>Print will show base prices only — "GST extra as applicable" note added</span>
+        </div>
+      </div>
       <CustomerFields invoice={quotation} setInvoice={setQuotation} />
       <LineItemsTable items={items} products={products} gstInclusive={gstInclusive} gstType={gstType}
         onChange={updateItem} onAdd={() => setItems(p => [...p, emptyItem()])} onRemove={i => setItems(p => p.filter((_, idx) => idx !== i))} />
