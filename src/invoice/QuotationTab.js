@@ -36,7 +36,12 @@ export default function QuotationTab({ role }) {
   const save = async (quotationData, items) => {
     let quotationId;
     if (editData) {
-      await supabase.from("quotations").update(quotationData).eq("id", editData.id);
+      const { id, created_at, ...updatePayload } = quotationData;
+      const { error: updateError } = await supabase
+        .from("quotations")
+        .update(updatePayload)
+        .eq("id", editData.id);
+      if (updateError) { showToast(`Update failed: ${updateError.message}`, "error"); return; }
       await supabase.from("quotation_items").delete().eq("quotation_id", editData.id);
       quotationId = editData.id;
       showToast("Quotation updated!");
@@ -61,9 +66,9 @@ export default function QuotationTab({ role }) {
       total: item.quantity * item.catalogue_price * (1 - (item.discount_pct || 0) / 100),
     })));
 
+    await fetchQuotations();
     setEditData(null);
     setView("list");
-    fetchQuotations();
   };
 
   const convertToInvoice = async (quotation) => {
