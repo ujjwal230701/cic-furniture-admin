@@ -27,7 +27,12 @@ export default function InvoiceTab({ role }) {
     let invoiceId;
     if (editData) {
       const oldItems = await fetchItems(editData.id);
-      await supabase.from("invoices").update(invoiceData).eq("id", editData.id);
+      const { id, created_at, items: _items, ...updatePayload } = invoiceData;
+      const { error: updateError } = await supabase
+        .from("invoices")
+        .update(updatePayload)
+        .eq("id", editData.id);
+      if (updateError) { showToast(`Update failed: ${updateError.message}`, "error"); return; }
       await supabase.from("invoice_items").delete().eq("invoice_id", editData.id);
       await adjustStock(oldItems, items, editData.id);
       invoiceId = editData.id;
