@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useMatch } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { S } from "../styles";
 import { fmt, generateInvoiceNumber } from "./invoiceUtils";
@@ -11,7 +12,20 @@ import InvoiceForm from "./InvoiceForm";
 
 export default function QuotationTab({ role }) {
   const isOwner = role === "owner";
-  const [view, setView] = useState("list");
+  const navigate = useNavigate();
+  const newMatch = useMatch("/quotations/new");
+  const editMatch = useMatch("/quotations/:id/edit");
+  const convertMatch = useMatch("/quotations/:id/convert");
+  const idMatch = useMatch("/quotations/:id");
+
+  const isNew = !!newMatch;
+  const isEdit = !!editMatch;
+  const isConvert = !!convertMatch;
+  const isPreview = !!idMatch && !isNew && !isEdit && !isConvert;
+  const previewId = isPreview ? Number(idMatch.params.id) : null;
+  const editId = isEdit ? Number(editMatch.params.id) : null;
+  const convertId = isConvert ? Number(convertMatch.params.id) : null;
+
   const [quotations, setQuotations] = useState([]);
   const [selected, setSelected] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -32,6 +46,53 @@ export default function QuotationTab({ role }) {
   };
 
   useEffect(() => { fetchQuotations(); }, []);
+
+  // Re-fetch on preview route
+  useEffect(() => {
+    setSelected(null);
+    setSelectedItems([]);
+    if (previewId == null || Number.isNaN(previewId)) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("quotations").select("*").eq("id", previewId).single();
+      const items = await fetchItems(previewId);
+      if (cancelled) return;
+      setSelected(data || null);
+      setSelectedItems(items);
+    })();
+    return () => { cancelled = true; };
+  }, [previewId]);
+
+  // Re-fetch on edit route
+  useEffect(() => {
+    setEditData(null);
+    if (editId == null || Number.isNaN(editId)) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("quotations").select("*").eq("id", editId).single();
+      const items = await fetchItems(editId);
+      if (cancelled) return;
+      setEditData(data ? { ...data, items } : null);
+    })();
+    return () => { cancelled = true; };
+  }, [editId]);
+
+  // Fetch quotation + next invoice number on convert route
+  useEffect(() => {
+    setConvertData(null);
+    if (convertId == null || Number.isNaN(convertId)) return;
+    let cancelled = false;
+    (async () => {
+      const { data: qData } = await supabase.from("quotations").select("*").eq("id", convertId).single();
+      if (!qData) { if (!cancelled) navigate("/quotations"); return; }
+      const items = await fetchItems(convertId);
+      const { data: lastInv } = await supabase.from("invoices").select("invoice_number").order("id", { ascending: false }).limit(1);
+      const invoiceNumber = generateInvoiceNumber(lastInv?.[0]?.invoice_number);
+      if (cancelled) return;
+      setConvertData({ quotation: qData, items, invoiceNumber });
+    })();
+    return () => { cancelled = true; };
+  }, [convertId, navigate]);
 
   const save = async (quotationData, items) => {
     let quotationId;
@@ -67,19 +128,11 @@ export default function QuotationTab({ role }) {
     })));
 
     await fetchQuotations();
-    setEditData(null);
-    setView("list");
-  };
-
-  const convertToInvoice = async (quotation) => {
-    const items = await fetchItems(quotation.id);
-    const { data } = await supabase.from("invoices").select("invoice_number").order("id", { ascending: false }).limit(1);
-    const invoiceNumber = generateInvoiceNumber(data?.[0]?.invoice_number);
-    setConvertData({ quotation, items, invoiceNumber });
-    setView("convert");
+    navigate("/quotations");
   };
 
   const saveConvertedInvoice = async (invoiceData, items) => {
+    if (!convertData) return;
     const { data, error } = await supabase.from("invoices").insert([{ ...invoiceData, status: "active" }]).select();
     if (error) { showToast(`Error: ${error.message}`, "error"); return; }
     const invoiceId = data[0].id;
@@ -103,9 +156,8 @@ export default function QuotationTab({ role }) {
     await supabase.from("quotations").update({ quo_status: "accepted" }).eq("id", convertData.quotation.id);
 
     showToast(`Invoice ${invoiceData.invoice_number} created!`);
-    setConvertData(null);
-    setView("list");
-    fetchQuotations();
+    await fetchQuotations();
+    navigate("/quotations");
   };
 
   const deleteQuotation = async (id) => {
@@ -113,11 +165,15 @@ export default function QuotationTab({ role }) {
     await supabase.from("quotation_items").delete().eq("quotation_id", id);
     await supabase.from("quotations").delete().eq("id", id);
     showToast("Quotation deleted");
-    fetchQuotations();
+    await fetchQuotations();
+    if ((isPreview && previewId === id) || (isEdit && editId === id) || (isConvert && convertId === id)) {
+      navigate("/quotations");
+    }
   };
 
-  const viewQuotation = async (q) => { setSelected(q); setSelectedItems(await fetchItems(q.id)); setView("preview"); };
-  const editQuotation = async (q) => { setEditData({ ...q, items: await fetchItems(q.id) }); setView("form"); };
+  const viewQuotation = (q) => navigate(`/quotations/${q.id}`);
+  const editQuotation = (q) => navigate(`/quotations/${q.id}/edit`);
+  const convertToInvoice = (q) => navigate(`/quotations/${q.id}/convert`);
 
   const whatsapp = () => {
     if (!selected) return;
@@ -130,10 +186,10 @@ export default function QuotationTab({ role }) {
     <div>
       {toast && <div style={{ position: "fixed", top: 16, right: 16, background: toast.type === "error" ? "#e53e3e" : "#38a169", color: "#fff", padding: "10px 20px", fontWeight: 700, fontSize: 13, zIndex: 999 }}>{toast.msg}</div>}
 
-      {view === "list" && (
+      {!isNew && !isEdit && !isPreview && !isConvert && (
         <QuotationList
           quotations={quotations}
-          onNew={() => { setEditData(null); setView("form"); }}
+          onNew={() => navigate("/quotations/new")}
           onView={viewQuotation}
           onEdit={editQuotation}
           onDelete={deleteQuotation}
@@ -142,33 +198,43 @@ export default function QuotationTab({ role }) {
         />
       )}
 
-      {view === "form" && (
-        <QuotationForm initial={editData} onSave={save} onCancel={() => setView("list")} />
+      {isNew && <QuotationForm onSave={save} onCancel={() => navigate("/quotations")} />}
+
+      {isEdit && (editData
+        ? <QuotationForm initial={editData} onSave={save} onCancel={() => navigate("/quotations")} />
+        : <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading quotation...</div>
       )}
 
-      {view === "convert" && convertData && (
-        <div>
-          <div className="no-print" style={{ padding: "12px 32px", background: "#fffaf0", borderBottom: "1px solid #e8e8e8", fontSize: 13, color: "#d97706", fontWeight: 600 }}>
-            Converting {convertData.quotation.quotation_number} → Invoice — review details and save
+      {isConvert && (convertData
+        ? (
+          <div>
+            <div className="no-print" style={{ padding: "12px 32px", background: "#fffaf0", borderBottom: "1px solid #e8e8e8", fontSize: 13, color: "#d97706", fontWeight: 600 }}>
+              Converting {convertData.quotation.quotation_number} → Invoice — review details and save
+            </div>
+            <InvoiceForm
+              initial={{
+                ...convertData.quotation,
+                invoice_number: convertData.invoiceNumber,
+                due_date: new Date().toISOString().split("T")[0],
+                payment_status: "unpaid",
+                items: convertData.items,
+              }}
+              onSave={saveConvertedInvoice}
+              onCancel={() => navigate("/quotations")}
+            />
           </div>
-          <InvoiceForm
-            initial={{
-              ...convertData.quotation,
-              invoice_number: convertData.invoiceNumber,
-              due_date: new Date().toISOString().split("T")[0],
-              payment_status: "unpaid",
-              items: convertData.items,
-            }}
-            onSave={saveConvertedInvoice}
-            onCancel={() => { setConvertData(null); setView("list"); }}
-          />
-        </div>
+        )
+        : <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading quotation...</div>
       )}
 
-      {view === "preview" && selected && (
+      {isPreview && !selected && (
+        <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading quotation...</div>
+      )}
+
+      {isPreview && selected && (
         <div>
           <div className="no-print" style={{ display: "flex", gap: 10, padding: "16px 32px", borderBottom: "1px solid #e8e8e8", flexWrap: "wrap", alignItems: "center" }}>
-            <button onClick={() => setView("list")} style={{ ...S.btnOutline, padding: "8px 16px" }}>← BACK</button>
+            <button onClick={() => navigate("/quotations")} style={{ ...S.btnOutline, padding: "8px 16px" }}>← BACK</button>
             <button onClick={() => window.print()} style={S.btnPrimary}>🖨 PRINT / PDF</button>
             <button onClick={whatsapp} style={{ ...S.btnPrimary, background: "#25d366" }}>📱 WHATSAPP</button>
             {isOwner && (

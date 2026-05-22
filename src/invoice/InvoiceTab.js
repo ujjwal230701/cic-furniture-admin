@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useMatch } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { S } from "../styles";
 import { fmt } from "./invoiceUtils";
@@ -10,7 +11,17 @@ import InvoicePreview from "./InvoicePreview";
 
 export default function InvoiceTab({ role }) {
   const isOwner = role === "owner";
-  const [view, setView] = useState("list");
+  const navigate = useNavigate();
+  const newMatch = useMatch("/invoices/new");
+  const editMatch = useMatch("/invoices/:id/edit");
+  const idMatch = useMatch("/invoices/:id");
+
+  const isNew = !!newMatch;
+  const isEdit = !!editMatch;
+  const isPreview = !!idMatch && !isNew && !isEdit;
+  const previewId = isPreview ? Number(idMatch.params.id) : null;
+  const editId = isEdit ? Number(editMatch.params.id) : null;
+
   const [invoices, setInvoices] = useState([]);
   const [selected, setSelected] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -22,6 +33,36 @@ export default function InvoiceTab({ role }) {
   const fetchItems = async (id) => { const { data } = await supabase.from("invoice_items").select("*").eq("invoice_id", id); return data || []; };
 
   useEffect(() => { fetchInvoices(); }, []);
+
+  // Re-fetch selected invoice when entering preview (supports direct URL access)
+  useEffect(() => {
+    setSelected(null);
+    setSelectedItems([]);
+    if (previewId == null || Number.isNaN(previewId)) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("invoices").select("*").eq("id", previewId).single();
+      const items = await fetchItems(previewId);
+      if (cancelled) return;
+      setSelected(data || null);
+      setSelectedItems(items);
+    })();
+    return () => { cancelled = true; };
+  }, [previewId]);
+
+  // Re-fetch invoice when entering edit (supports direct URL access)
+  useEffect(() => {
+    setEditData(null);
+    if (editId == null || Number.isNaN(editId)) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("invoices").select("*").eq("id", editId).single();
+      const items = await fetchItems(editId);
+      if (cancelled) return;
+      setEditData(data ? { ...data, items } : null);
+    })();
+    return () => { cancelled = true; };
+  }, [editId]);
 
   const save = async (invoiceData, items) => {
     let invoiceId;
@@ -59,15 +100,12 @@ export default function InvoiceTab({ role }) {
       total: item.quantity * item.catalogue_price * (1 - (item.discount_pct || 0) / 100),
     })));
 
-    
-
-    setEditData(null);
-    setView("list");
+    navigate("/invoices");
     fetchInvoices();
   };
 
-  const viewInvoice = async (inv) => { setSelected(inv); setSelectedItems(await fetchItems(inv.id)); setView("preview"); };
-  const editInvoice = async (inv) => { setEditData({ ...inv, items: await fetchItems(inv.id) }); setView("form"); };
+  const viewInvoice = (inv) => navigate(`/invoices/${inv.id}`);
+  const editInvoice = (inv) => navigate(`/invoices/${inv.id}/edit`);
 
   const deleteInvoice = async (id) => {
     if (!window.confirm("Permanently delete this invoice? Stock will be restored and this cannot be undone.")) return;
@@ -77,6 +115,7 @@ export default function InvoiceTab({ role }) {
     await supabase.from("invoices").delete().eq("id", id);
     showToast("Invoice deleted");
     fetchInvoices();
+    if (isPreview && previewId === id) navigate("/invoices");
   };
 
   const cancelInvoice = async (inv) => {
@@ -86,6 +125,7 @@ export default function InvoiceTab({ role }) {
     await restoreStock(items, inv.id);
     showToast(`${inv.invoice_number} cancelled — stock restored`);
     fetchInvoices();
+    setSelected(s => s && s.id === inv.id ? { ...s, status: "cancelled" } : s);
   };
 
   const updatePayment = async (id, status) => {
@@ -106,14 +146,25 @@ export default function InvoiceTab({ role }) {
     <div>
       {toast && <div style={{ position: "fixed", top: 16, right: 16, background: toast.type === "error" ? "#e53e3e" : "#38a169", color: "#fff", padding: "10px 20px", fontWeight: 700, fontSize: 13, zIndex: 999 }}>{toast.msg}</div>}
 
-      {view === "list" && <InvoiceList invoices={invoices} onNew={() => { setEditData(null); setView("form"); }} onView={viewInvoice} onEdit={editInvoice} onCancel={cancelInvoice} onDelete={deleteInvoice} isOwner={isOwner} />}
+      {!isNew && !isEdit && !isPreview && (
+        <InvoiceList invoices={invoices} onNew={() => navigate("/invoices/new")} onView={viewInvoice} onEdit={editInvoice} onCancel={cancelInvoice} onDelete={deleteInvoice} isOwner={isOwner} />
+      )}
 
-      {view === "form" && <InvoiceForm initial={editData} onSave={save} onCancel={() => setView("list")} />}
+      {isNew && <InvoiceForm onSave={save} onCancel={() => navigate("/invoices")} />}
 
-      {view === "preview" && selected && (
+      {isEdit && (editData
+        ? <InvoiceForm initial={editData} onSave={save} onCancel={() => navigate("/invoices")} />
+        : <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading invoice...</div>
+      )}
+
+      {isPreview && !selected && (
+        <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading invoice...</div>
+      )}
+
+      {isPreview && selected && (
         <div>
           <div className="no-print" style={{ display: "flex", gap: 10, padding: "16px 32px", borderBottom: "1px solid #e8e8e8", flexWrap: "wrap", alignItems: "center" }}>
-            <button onClick={() => setView("list")} style={{ ...S.btnOutline, padding: "8px 16px" }}>← BACK</button>
+            <button onClick={() => navigate("/invoices")} style={{ ...S.btnOutline, padding: "8px 16px" }}>← BACK</button>
             {selected.status !== "cancelled" ? (
               <>
                 <button onClick={() => window.print()} style={S.btnPrimary}>🖨 PRINT / PDF</button>

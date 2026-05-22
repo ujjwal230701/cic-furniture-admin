@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useMatch } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import { CATEGORIES } from "./config";
 import { Toast } from "./components";
@@ -16,10 +17,12 @@ const STAFF_CAN_SEE_FLOOR_PRICE = true;
 
 export default function ProductsTab({ role }) {
   const isOwner = role === "owner";
+  const navigate = useNavigate();
+  const newMatch = useMatch("/products/new");
+  const editMatch = useMatch("/products/:id/edit");
+  const editId = editMatch ? Number(editMatch.params.id) : null;
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editProduct, setEditProduct] = useState(null);
   const [showCsvImport, setShowCsvImport] = useState(false);
   const [receiveProduct, setReceiveProduct] = useState(null);
   const [labelProduct, setLabelProduct] = useState(null);
@@ -27,6 +30,10 @@ export default function ProductsTab({ role }) {
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
   const [expandedParents, setExpandedParents] = useState(new Set());
+
+  const editProduct = editId != null ? products.find(p => p.id === editId) : null;
+  const showForm = !!newMatch || !!editProduct;
+  const closeForm = () => navigate("/products");
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -111,8 +118,7 @@ export default function ProductsTab({ role }) {
       }
     }
 
-    setShowForm(false);
-    setEditProduct(null);
+    navigate("/products");
     fetchProducts();
   };
 
@@ -240,7 +246,7 @@ export default function ProductsTab({ role }) {
                     <button onClick={() => recordSale(p)} style={S.btnSuccess}>SALE</button>
                   </>
                 )}
-                <button onClick={() => setEditProduct(p)} style={{ ...S.btnOutline, padding: "6px 12px" }}>EDIT</button>
+                <button onClick={() => navigate(`/products/${p.id}/edit`)} style={{ ...S.btnOutline, padding: "6px 12px" }}>EDIT</button>
                 <button onClick={() => remove(p.id)} style={S.btnDanger}>DEL</button>
               </>
             )}
@@ -296,7 +302,7 @@ export default function ProductsTab({ role }) {
                     <>
                       <button onClick={() => setReceiveProduct(v)} style={{ ...S.btnOutline, padding: "4px 10px", fontSize: 10 }}>+STOCK</button>
                       <button onClick={() => recordSale(v)} style={{ ...S.btnSuccess, padding: "4px 10px", fontSize: 10 }}>SALE</button>
-                      <button onClick={() => setEditProduct(v)} style={{ ...S.btnOutline, padding: "4px 10px", fontSize: 10 }}>EDIT</button>
+                      <button onClick={() => navigate(`/products/${v.id}/edit`)} style={{ ...S.btnOutline, padding: "4px 10px", fontSize: 10 }}>EDIT</button>
                       <button onClick={() => remove(v.id)} style={{ ...S.btnDanger, padding: "4px 10px", fontSize: 10 }}>DEL</button>
                     </>
                   )}
@@ -312,11 +318,11 @@ export default function ProductsTab({ role }) {
   return (
     <div>
       <Toast toast={toast} />
-      {(showForm || editProduct) && (
+      {showForm && (
         <ProductForm
           initial={editProduct}
           onSave={save}
-          onCancel={() => { setShowForm(false); setEditProduct(null); }}
+          onCancel={closeForm}
           role={role}
         />
       )}
@@ -352,7 +358,7 @@ export default function ProductsTab({ role }) {
         {isOwner && (
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => setShowCsvImport(true)} style={S.btnOutline}>IMPORT CSV</button>
-            <button onClick={() => setShowForm(true)} style={S.btnPrimary}>+ ADD PRODUCT</button>
+            <button onClick={() => navigate("/products/new")} style={S.btnPrimary}>+ ADD PRODUCT</button>
           </div>
         )}
       </div>

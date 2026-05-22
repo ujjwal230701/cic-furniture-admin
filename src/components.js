@@ -1,20 +1,24 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import { S } from "./styles";
 
-export function AdminNav({ tab, setTab, onLogout, role, userName }) {
+export function AdminNav({ onLogout, role, userName }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const tabs = [
-    { key: "dashboard", label: "Dashboard" },
-    { key: "products", label: "Products" },
-    { key: "invoices", label: "Invoices" },
-    { key: "quotations", label: "Quotations" },
-    { key: "sku-reference", label: "SKU Reference" },
-    ...(role === "owner" ? [{ key: "staff", label: "Staff" }] : []),
+    { path: "/dashboard", label: "Dashboard" },
+    { path: "/products", label: "Products" },
+    { path: "/invoices", label: "Invoices" },
+    { path: "/quotations", label: "Quotations" },
+    { path: "/sku-reference", label: "SKU Reference" },
+    ...(role === "owner" ? [{ path: "/staff", label: "Staff" }] : []),
   ];
 
-  const goTo = (key) => { setTab(key); setMenuOpen(false); };
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
+  const goTo = (path) => { navigate(path); setMenuOpen(false); };
 
   return (
     <>
@@ -28,8 +32,8 @@ export function AdminNav({ tab, setTab, onLogout, role, userName }) {
           {/* Desktop tabs */}
           <div className="admin-desktop-nav" style={{ display: "flex", gap: 4 }}>
             {tabs.map(t => (
-              <button key={t.key} onClick={() => goTo(t.key)}
-                style={{ background: tab === t.key ? "#fff" : "transparent", color: tab === t.key ? "#1a1a1a" : "#aaa", border: "none", padding: "8px 16px", fontSize: 11, fontWeight: 700, letterSpacing: 1, cursor: "pointer" }}>
+              <button key={t.path} onClick={() => goTo(t.path)}
+                style={{ background: isActive(t.path) ? "#fff" : "transparent", color: isActive(t.path) ? "#1a1a1a" : "#aaa", border: "none", padding: "8px 16px", fontSize: 11, fontWeight: 700, letterSpacing: 1, cursor: "pointer" }}>
                 {t.label.toUpperCase()}
               </button>
             ))}
@@ -57,8 +61,8 @@ export function AdminNav({ tab, setTab, onLogout, role, userName }) {
       {menuOpen && (
         <div className="admin-mobile-nav" style={{ position: "fixed", top: 60, left: 0, right: 0, bottom: 0, background: "#1a1a1a", zIndex: 99, padding: 24, display: "flex", flexDirection: "column", gap: 4 }}>
           {tabs.map(t => (
-            <button key={t.key} onClick={() => goTo(t.key)}
-              style={{ width: "100%", background: tab === t.key ? "rgba(255,255,255,0.1)" : "transparent", border: "none", borderLeft: tab === t.key ? "3px solid #fff" : "3px solid transparent", color: tab === t.key ? "#fff" : "#aaa", cursor: "pointer", fontSize: 16, fontWeight: tab === t.key ? 700 : 400, padding: "16px 20px", textAlign: "left", letterSpacing: 1, display: "block" }}>
+            <button key={t.path} onClick={() => goTo(t.path)}
+              style={{ width: "100%", background: isActive(t.path) ? "rgba(255,255,255,0.1)" : "transparent", border: "none", borderLeft: isActive(t.path) ? "3px solid #fff" : "3px solid transparent", color: isActive(t.path) ? "#fff" : "#aaa", cursor: "pointer", fontSize: 16, fontWeight: isActive(t.path) ? 700 : 400, padding: "16px 20px", textAlign: "left", letterSpacing: 1, display: "block" }}>
               {t.label}
             </button>
           ))}
