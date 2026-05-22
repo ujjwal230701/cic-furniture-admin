@@ -18,6 +18,7 @@ export const emptyItem = () => ({
 
 export default function InvoiceForm({ onSave, onCancel, initial }) {
   const [products, setProducts] = useState([]);
+  const [saving, setSaving] = useState(false);
   const [gstInclusive, setGstInclusive] = useState(initial?.gst_inclusive || false);
   const [invoice, setInvoice] = useState(initial || {
     invoice_number: "", customer_name: "", customer_address: "",
@@ -55,7 +56,8 @@ export default function InvoiceForm({ onSave, onCancel, initial }) {
     }));
   };
 
-  const save = () => {
+  const save = async () => {
+    if (saving) return;
     if (!invoice.customer_name || items.length === 0) return;
     const manualItems = items.filter(item => !item.product_id && item.product_name);
     if (manualItems.length > 0) {
@@ -63,7 +65,12 @@ export default function InvoiceForm({ onSave, onCancel, initial }) {
       const proceed = window.confirm(`⚠️ These items are not from your catalogue:\n\n${names}\n\nStock will NOT be updated for these items.\n\nProceed anyway?`);
       if (!proceed) return;
     }
-    onSave({ ...invoice, ...totals, gst_type: gstType, gst_inclusive: gstInclusive }, items);
+    setSaving(true);
+    try {
+      await onSave({ ...invoice, ...totals, gst_type: gstType, gst_inclusive: gstInclusive }, items);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -71,8 +78,10 @@ export default function InvoiceForm({ onSave, onCancel, initial }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>{initial ? "EDIT INVOICE" : "NEW INVOICE"}</div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={save} style={S.btnPrimary}>SAVE INVOICE</button>
-          <button onClick={onCancel} style={S.btnOutline}>CANCEL</button>
+          <button onClick={save} disabled={saving} style={{ ...S.btnPrimary, opacity: saving ? 0.6 : 1, cursor: saving ? "wait" : "pointer" }}>
+            {saving ? "SAVING..." : "SAVE INVOICE"}
+          </button>
+          <button onClick={onCancel} disabled={saving} style={{ ...S.btnOutline, opacity: saving ? 0.6 : 1 }}>CANCEL</button>
         </div>
       </div>
       <GSTToggle gstInclusive={gstInclusive} setGstInclusive={setGstInclusive} gstType={gstType} />

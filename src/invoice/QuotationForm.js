@@ -23,6 +23,7 @@ export const emptyItem = () => ({
 
 export default function QuotationForm({ onSave, onCancel, initial }) {
   const [products, setProducts] = useState([]);
+  const [saving, setSaving] = useState(false);
   const { items: initialItems, ...initialQuotation } = initial || {};
   const [gstInclusive, setGstInclusive] = useState(initial?.gst_inclusive || false);
   const [gstSeparate, setGstSeparate] = useState(initial?.gst_separate || false);
@@ -63,9 +64,15 @@ export default function QuotationForm({ onSave, onCancel, initial }) {
     }));
   };
 
-  const save = () => {
+  const save = async () => {
+    if (saving) return;
     if (!quotation.customer_name || items.length === 0) return;
-    onSave({ ...quotation, ...totals, gst_type: gstType, gst_inclusive: gstInclusive, gst_separate: gstSeparate }, items);
+    setSaving(true);
+    try {
+      await onSave({ ...quotation, ...totals, gst_type: gstType, gst_inclusive: gstInclusive, gst_separate: gstSeparate }, items);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -73,8 +80,10 @@ export default function QuotationForm({ onSave, onCancel, initial }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>{initial ? "EDIT QUOTATION" : "NEW QUOTATION"}</div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={save} style={S.btnPrimary}>SAVE QUOTATION</button>
-          <button onClick={onCancel} style={S.btnOutline}>CANCEL</button>
+          <button onClick={save} disabled={saving} style={{ ...S.btnPrimary, opacity: saving ? 0.6 : 1, cursor: saving ? "wait" : "pointer" }}>
+            {saving ? "SAVING..." : "SAVE QUOTATION"}
+          </button>
+          <button onClick={onCancel} disabled={saving} style={{ ...S.btnOutline, opacity: saving ? 0.6 : 1 }}>CANCEL</button>
         </div>
       </div>
 
