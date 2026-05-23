@@ -14,6 +14,10 @@ export function AdminNav({ onLogout, role, userName }) {
     { path: "/invoices", label: "Invoices" },
     { path: "/quotations", label: "Quotations" },
     { path: "/sku-reference", label: "SKU Reference" },
+    { path: "/sales", label: "Sales Log" },
+    { path: "/expenses",  label: "Expenses" },
+    { path: "/purchases", label: "Purchases" },
+    { path: "/suppliers", label: "Suppliers" },
     ...(role === "owner" ? [{ path: "/staff", label: "Staff" }] : []),
   ];
 

@@ -7,6 +7,10 @@ import InvoiceTab from "./invoice/InvoiceTab";
 import QuotationTab from "./invoice/QuotationTab";
 import StaffManagementTab from "./StaffManagementTab";
 import SkuReferenceTab from "./SkuReferenceTab";
+import SalesLogTab from "./SalesLogTab";
+import ExpensesTab from "./ExpensesTab";
+import PurchaseLogTab from "./PurchaseLogTab";
+import SuppliersTab from "./SuppliersTab";
 
 function AppInner() {
   const { session, profile, role, signOut, loading } = useAuth();
@@ -30,6 +34,10 @@ function AppInner() {
           <Route path="/invoices/*" element={<InvoiceTab role={role} />} />
           <Route path="/quotations/*" element={<QuotationTab role={role} />} />
           <Route path="/sku-reference" element={<SkuReferenceTab role={role} />} />
+          <Route path="/sales/*" element={<SalesLogTab role={role} />} />
+          <Route path="/expenses/*"  element={<ExpensesTab role={role} />} />
+          <Route path="/purchases/*" element={<PurchaseLogTab role={role} />} />
+          <Route path="/suppliers"   element={<SuppliersTab role={role} />} />
           {role === "owner" && <Route path="/staff" element={<StaffManagementTab />} />}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
