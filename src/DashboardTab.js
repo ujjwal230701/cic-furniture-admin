@@ -7,6 +7,13 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from "recharts";
 
+const CHANNELS = [
+  { key: "cash",       label: "Cash",       icon: "💵", saleKey: "payment_cash",       expType: "cash"       },
+  { key: "upi_veena",  label: "UPI Veena",  icon: "📱", saleKey: "payment_upi_veena",  expType: "upi_veena"  },
+  { key: "upi_ujjwal", label: "UPI Ujjwal", icon: "📱", saleKey: "payment_upi_ujjwal", expType: "upi_ujjwal" },
+  { key: "bank",       label: "Bank",       icon: "🏦", saleKey: "payment_bank",       expType: "bank"       },
+];
+
 const fmt      = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 const fmtShort = (n) => {
   const v = Math.abs(Number(n || 0));
@@ -159,6 +166,19 @@ export default function DashboardTab({ role }) {
       .map(p => ({ ...p, margin: p.revenue > 0 ? (((p.revenue - p.cost) / p.revenue) * 100).toFixed(1) : "0" }));
   }, [saleItems, filteredSales]);
 
+  // ─── PAYMENT CHANNELS ─────────────────────────────────────────────────────
+  const channelData = useMemo(() => {
+    const rows = CHANNELS.map(ch => {
+      const inflow  = filteredSales.reduce((s, r) => s + Number(r[ch.saleKey]  || 0), 0);
+      const outflow = filteredExpenses.filter(e => e.payment_type === ch.expType)
+                       .reduce((s, e) => s + Number(e.amount || 0), 0);
+      return { ...ch, inflow, outflow, net: inflow - outflow };
+    });
+    const totalIn  = rows.reduce((s, r) => s + r.inflow,  0);
+    const totalOut = rows.reduce((s, r) => s + r.outflow, 0);
+    return { rows, totalIn, totalOut, totalNet: totalIn - totalOut };
+  }, [filteredSales, filteredExpenses]);
+
   // ─── PAYABLES ──────────────────────────────────────────────────────────────
   const payableGroups = useMemo(() => {
     const groups = {};
@@ -211,6 +231,54 @@ export default function DashboardTab({ role }) {
         <StatCard label="Gross Margin" value={`${kpiGrossMargin}%`} color="#06b6d4" />
         <StatCard label="Expenses"     value={fmt(kpiExpenses)}     color="#e53e3e" />
         <StatCard label="Net Profit"   value={fmt(kpiNetProfit)}    color={kpiNetProfit >= 0 ? "#38a169" : "#e53e3e"} />
+      </div>
+
+      {/* ── Payment Channels ────────────────────────────────────────────────── */}
+      <div style={{ ...S.card, marginBottom: 24, overflowX: "auto" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#888", marginBottom: 16 }}>
+          PAYMENT CHANNELS — INFLOW · OUTFLOW · NET
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: "2px solid #e8e8e8", background: "#f9f9f9" }}>
+              {["CHANNEL", "IN (SALES)", "OUT (EXPENSES)", "NET"].map(h => (
+                <th key={h} style={{ padding: "9px 14px", textAlign: h === "CHANNEL" ? "left" : "right",
+                  fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#888", whiteSpace: "nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {channelData.rows.map(ch => (
+              <tr key={ch.key} style={{ borderBottom: "1px solid #f0f0f0" }}>
+                <td style={{ padding: "11px 14px" }}>
+                  <span style={{ marginRight: 7 }}>{ch.icon}</span>
+                  <span style={{ fontWeight: 600 }}>{ch.label}</span>
+                </td>
+                <td style={{ padding: "11px 14px", textAlign: "right", color: "#38a169", fontWeight: ch.inflow ? 600 : 400 }}>
+                  {ch.inflow ? fmt(ch.inflow) : <span style={{ color: "#ccc" }}>—</span>}
+                </td>
+                <td style={{ padding: "11px 14px", textAlign: "right", color: ch.outflow ? "#e53e3e" : "#ccc", fontWeight: ch.outflow ? 600 : 400 }}>
+                  {ch.outflow ? `–${fmt(ch.outflow)}` : "—"}
+                </td>
+                <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 700,
+                  color: ch.net > 0 ? "#1a1a1a" : ch.net < 0 ? "#e53e3e" : "#aaa" }}>
+                  {ch.inflow === 0 && ch.outflow === 0 ? <span style={{ color: "#ccc" }}>—</span> : fmt(ch.net)}
+                </td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: "2px solid #e8e8e8", background: "#f9f9f9" }}>
+              <td style={{ padding: "11px 14px", fontWeight: 700, fontSize: 12, letterSpacing: 0.5 }}>TOTAL</td>
+              <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 800, color: "#38a169" }}>{fmt(channelData.totalIn)}</td>
+              <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 800, color: "#e53e3e" }}>
+                {channelData.totalOut ? `–${fmt(channelData.totalOut)}` : "—"}
+              </td>
+              <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 800, fontSize: 14,
+                color: channelData.totalNet >= 0 ? "#38a169" : "#e53e3e" }}>
+                {fmt(channelData.totalNet)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* ── Chart ───────────────────────────────────────────────────────────── */}
